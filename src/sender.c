@@ -64,7 +64,28 @@ int main (int argc, char* argv[])
 
 }
 
-int encoder(struct sockaddr_in6 *addr, int port){
+int encoder(struct sockaddr_in6 *addr, int port){   
+	int sfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    	if(sfd == -1) {
+        	fprintf(stderr,"Erreur création socket\n");
+        	return -1;
+    	}
+        
+    	size_t addrlen = sizeof(struct sockaddr_in6);
+	if(port > 0) {
+        	addr->sin6_port=htons(port);
+    	}
+    
+    
+    	if(addr!=NULL) {
+        	if(bind(sfd,(struct sockaddr*) addr, addrlen)!=0) {
+            		fprintf(stderr,"error bind\n");
+            	return -1;
+        	}
+    	}
+   
+    
+    return sfd;
 }
 
 int envoyer(int sfd, char* send_path, int optionf, bool redirection){
