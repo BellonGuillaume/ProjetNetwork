@@ -64,7 +64,6 @@ void node_del(node_t* node)
       node->pkt=NULL;
     }
     free(node);
-    node=NULL;
   }
   return;
 }
