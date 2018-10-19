@@ -68,17 +68,22 @@ void node_del(node_t* node)
   }
   return;
 }
-
-/*int window_check_RTT(window_t* window)
+ /*
+  * Checks if the RTT has expired on one of the window's node and resend it
+  * @PRE: socket must be ready to be written on.
+  * @POST: one of the elements that had its RTT expired has been sent.
+  * @RETURN: 0 if none of the elements had its RTT expired, 1 if one was sent.
+ */
+/*int window_check_RTT(int sfd, window_t* window)
 {
   int count=0;
   for(int i=0;i<window->length;i++)
   {
     if(((window->buffer[i])->time)+TIMEOUT_TIME<getTime())
     {
-      send_socket((window->buffer[i])->pkt);
+      send_pkt(sfd, (window->buffer[i])->pkt);
       count++;
-      //return count?
+      return count?
     }
   }
   return count;
@@ -96,4 +101,16 @@ int window_add(window_t* window, pkt_t* pkt)
     return 0;
   }
   return -1;
+}
+
+int window_remove(window_t* window, int seqnum)
+{
+  if(window->size_used==0)
+    return -1;
+  int i;
+  for(i=0;window->buffer[i]->seqnum!=seqnum;i++);
+  if(i==window->length-1)
+    return -1;
+  window->buffer[i]=NULL;
+  return 0;
 }

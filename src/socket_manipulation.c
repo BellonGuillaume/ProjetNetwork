@@ -9,7 +9,11 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <sys/time.h>
+#include <time.h>
+#include <errno.h>
+#include <sys/poll.h>
+#include "packet_interface.h"
 
 const char * real_address(const char *address, struct sockaddr_in6 *rval)
 {
@@ -117,4 +121,102 @@ if(connect(sfd,(struct sockaddr *) &src_addr,addrlen)==-1){
 }
     //fprintf(stderr,"===Connected after first message - wait_for_client\n");
 return 0;
+}
+
+int send_buf(int sfd, char* buf; size_t len)
+{
+  int length;
+  for(int totalLength=0;totalLength<len;totalLength+=length)
+  {
+    length=write(sfd,buf,len);
+    if(length<0)
+    {
+      fprintf(stderr,"Error writing on the socket\n");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int send_pkt(int sfd, pkt_t* pkt)
+{
+  char temp[1024];
+  size_t length=1024;
+  if(pkt_encode(pkt,temp,&length)!=PKT_OK)
+  {
+    fprintf(stderr,"Encoding error\n");
+    return EXIT_FAILURE;
+  }
+  char buf[length];
+  memcpy(buf,temp,length);
+  return send_buf(sfd,buf,(size_t) length);
+}
+
+int receive_buf(int sfd, char* buf, int* len)
+{
+    int ret=-1;
+    *len=0;
+    while(1)
+    {
+        struct pollfd fds[1];
+
+        fds[0].fd=sfd;
+        fds[0].events=POLLIN;
+
+        ret = poll(fds, 1, -1 );
+
+        if (ret<0)
+        {
+            fprintf(stderr,"select error\n");
+            fprintf(stderr,"ERROR: %s\n", strerror(errno));
+            return -1;
+        }
+
+        if (fds[1].revents & POLLIN)
+        {
+            int length=read(sfd, buf, 1024);
+            /*if(length<0)//?
+            {
+                fprintf(stderr,"ERROR: %s\n", strerror(errno));
+                fprintf(stderr,"Erreur read socket\n");
+                return;
+            }*/
+            if(length==EOF)//?
+            {
+                //fprintf(stderr,"Fin du programme");
+                return 1;
+            }
+            *len+=length;
+        }
+    }
+}
+
+/*
+ * Read paquets from the socket.
+ * @PRE: pkt is not malloced (created) yet.
+ * @RETURN : 0 if paquet received correctily, -1 if error and 1 if EOF reached.
+ */
+int receive_pkt(int sfd, pkt_t* pkt)
+{
+  int len=1024;
+  char buf[1024];
+  //Just in case
+  pkt_del(pkt);
+  pkt=pkt_new();
+  int signal=receive_buf(stf,buf,&len);
+  if(signal<0)
+  {
+    fprintf(stderr,"Error receiving\n");
+    return -1;
+  }
+  if(signal>0)
+  {
+    fprintf(stdout,"Finir programme\n");
+    return 1;
+  }
+  if(pkt_decode(buf,len,pkt)!=PKT_OK)
+  {
+    fprintf(stderr,"Error decoding\n");
+    return -1;
+  }
 }

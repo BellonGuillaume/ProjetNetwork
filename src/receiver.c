@@ -15,6 +15,10 @@
 
 int receive_data(int sfd, char* filename, int optionf)
 {
+  pkt_t* pkt=NULL;
+  int err=receive_pkt(sfd,pkt);
+  printf("\n[RECEIVED] : %s\n\n",pkt_get_payload(pkt));
+  pkt_del(pkt);
   return 0;
 }
 

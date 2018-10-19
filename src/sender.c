@@ -15,6 +15,18 @@
 
 int send_data(int sfd, char* filename, int optionf)
 {
+	pkt_t* pkt=pkt_new();
+	pkt_set_tr(pkt,0);
+	pkt_set_type(pkt,1);
+	pkt_set_timestamp(pkt,0);
+	pkt_set_crc1(pkt,0);
+	pkt_set_seqnum(pkt,0);
+	pkt_set_payload(pkt,"Hello world");
+	pkt_set_length(pkt,sizeof("Hello world"));
+	pkt_set_crc2(pkt,0);
+	send_pkt(sfd,pkt);
+	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
+	pkt_del(pkt); //à enlever
 	return 0;
 }
 
