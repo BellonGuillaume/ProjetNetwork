@@ -17,7 +17,11 @@ int receive_data(int sfd, char* filename, int optionf)
 {
   pkt_t* pkt=NULL;
   int err=receive_pkt(sfd,pkt);
-  printf("\n[RECEIVED] : %s\n\n",pkt_get_payload(pkt));
+  printf("about to pkt_get_payload\n");
+  char* msg;
+  memcpy(msg,pkt_get_payload(pkt),pkt_get_length(pkt));
+  printf("about to printf\n");
+  printf("\n[RECEIVED] : %s\n\n",msg);
   pkt_del(pkt);
   return 0;
 }
@@ -25,7 +29,7 @@ int receive_data(int sfd, char* filename, int optionf)
 int main(int argc, char* argv[])
 {
   int optionf=0;
-  char first_address[16]="";
+  char first_address[16]="::1";
   int port=-1;
   char filename[255]="";
   if(ValidateArgs(argc,argv,&optionf,filename,first_address,&port)!=0)
@@ -42,19 +46,20 @@ int main(int argc, char* argv[])
     fprintf(stderr, "Wrong hostname %s: %s\n", first_address, err);
 		return EXIT_FAILURE;
   }
-  int sfd = create_socket(&addr,port,NULL,-1);
-  if(sfd<0)
-  {
-    fprintf(stderr, "Failed to create the socket\n");
-    return EXIT_FAILURE;
-  }
-  if(wait_for_client(sfd)<0)
-  {
-    fprintf(stderr,"Could not connect after the first message\n");
-    close(sfd);
-    return EXIT_FAILURE;
-  }
-
+  printf("about to create_socket\n");
+  int sfd = create_socket(&addr, port, NULL, -1); /* Bound */
+  printf("about to wait_for_client\n");
+	if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */ //Si j'ai un socket mais qu'il y a une erreur dans wait_for_client
+		fprintf(stderr,
+				"Could not connect the socket after the first message.\n");
+		close(sfd);
+		return EXIT_FAILURE;
+	}
+	if (sfd < 0) {
+		fprintf(stderr, "Failed to create the socket!\n");
+		return EXIT_FAILURE;
+	}
+  printf("about to receive_data\n");
   if(receive_data(sfd, filename, optionf) < 0) {
 		fprintf(stderr, "Reception error\n");
 		return EXIT_FAILURE;

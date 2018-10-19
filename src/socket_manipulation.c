@@ -162,7 +162,7 @@ int receive_buf(int sfd, char* buf, int* len)
 
         fds[0].fd=sfd;
         fds[0].events=POLLIN;
-
+        //printf("about to poll\n");
         ret = poll(fds, 1, -1 );
 
         if (ret<0)
@@ -172,9 +172,11 @@ int receive_buf(int sfd, char* buf, int* len)
             return -1;
         }
 
-        if (fds[1].revents & POLLIN)
+        if (fds[0].revents & POLLIN)
         {
+          printf("about to read\n");
             int length=read(sfd, buf, 1024);
+            printf("length read: %d\n",length);
             /*if(length<0)//?
             {
                 fprintf(stderr,"ERROR: %s\n", strerror(errno));
@@ -187,6 +189,7 @@ int receive_buf(int sfd, char* buf, int* len)
                 return 1;
             }
             *len+=length;
+            return 0;
         }
     }
 }
@@ -203,6 +206,7 @@ int receive_pkt(int sfd, pkt_t* pkt)
   //Just in case
   pkt_del(pkt);
   pkt=pkt_new();
+  //printf("About to receive_buf\n");
   int signal=receive_buf(sfd,buf,&len);
   if(signal<0)
   {
@@ -214,9 +218,12 @@ int receive_pkt(int sfd, pkt_t* pkt)
     fprintf(stdout,"Finir programme\n");
     return 1;
   }
+  printf("about to decode\n");
   if(pkt_decode(buf,len,pkt)!=PKT_OK)
   {
     fprintf(stderr,"Error decoding\n");
     return -1;
   }
+  printf("décodé\n");
+  return 0;
 }
