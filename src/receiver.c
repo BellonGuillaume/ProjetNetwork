@@ -1,20 +1,8 @@
 #include "receiver.h"
 
-//Rappel de la structure
-/*struct __attribute__((__packed_)) pkt {
-    uint8_t window:5;
-    uint8_t tr:1;
-    uint8_t type:2;
-    uint8_t seqnum;
-    uint16_t length;
-    uint32_t timestamp;
-    uint32_t crc1;
-    char* payload;
-    uint32_t crc2;
-};*/
-
 int receive_data(int sfd, char* filename, int optionf)
 {
+  /*TEST
   pkt_t* pkt=pkt_new();
   int err=receive_pkt(sfd,pkt);
   char msg[pkt_get_length(pkt)];
@@ -23,8 +11,49 @@ int receive_data(int sfd, char* filename, int optionf)
   memcpy(msg,pkt_get_payload(pkt),pkt_get_length(pkt));
   //printf("about to printf\n");
   printf("\n[RECEIVED] : %s\n\n",msg);
-  pkt_del(pkt);
-  return 0;
+  pkt_del(pkt);*/
+
+    int ret=-1;
+    int fd;
+    if(!optionf)
+    {
+      fd=1;
+    }
+    else
+    {
+      fd=open(filename,O_WRONLY);
+      if(fd<0)
+      {
+        fprintf(stderr,"Error: file might not exist\n");
+				return -1;
+      }
+    }
+    char bufreceiver[1024];
+    memset(bufreceiver,0,1024);
+    int acks=0; //TODO :à remplacer par le selective repeat -> correspond à s'il faut renvoyer un ack
+    while(1)
+    {
+      if(acks)
+      {
+        uint8_t seqnum=0;
+        uint8_t window=0;
+        uint8_t type=1;
+        pkt_t* ack = pkt_initialize(NULL,0,seqnum,window); //TODO :mettre le tr à 1?
+        pkt_set_type(ack,type);
+        send_pkt(sfd,ack);
+        pkt_del(ack);
+      }
+      pkt_t* pkt=pkt_new();
+      receive_pkt(sfd,pkt); //TODO : check crc ou tr
+      int length=write(fd,pkt_get_payload(pkt),pkt_get_length(pkt));
+      if(length==0)
+      {
+        //Fin du programme
+        if(fd!=1)
+          close(fd);
+        return 0;
+      }
+    }
 }
 
 int main(int argc, char* argv[])

@@ -5,13 +5,17 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <getopt.h>
+#include <ctype.h>
 #include "socket_manipulation.c"
 #include "commonlib.c"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 int receive_data(int sfd, char* filename, int optionf);
