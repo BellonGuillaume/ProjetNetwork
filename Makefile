@@ -9,10 +9,10 @@ receiver: packet.o receiver.o
 packet.o: src/packet.c src/packet_interface.h
 	gcc -c src/packet.c -lz
 
-receiver.o: src/receiver.c src/receiver.h
-	gcc -c src/receiver.c
+receiver.o: src/receiver.c src/receiver.h src/socket_manipulation.c src/commonlib.c
+	gcc -c src/receiver.c src/socket_manipulation.c src/commonlib.c
 
-sender.o: src/sender.c src/sender.h
-	gcc -c src/sender.c
+sender.o: src/sender.c src/sender.h src/socket_manipulation.c src/commonlib.c
+	gcc -c src/sender.c src/socket_manipulation.c src/commonlib.c
 clean :
 	rm sender receiver packet.o receiver.o sender.o
