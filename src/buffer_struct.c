@@ -109,7 +109,11 @@ int window_remove(window_t* window, int seqnum)
   window->buffer[i]=NULL;
   return 0;
 }
-/*
+
+
+
+
+
 int main(int argc, char const *argv[]) {
   int length = 10;
   window_t* test = window_new(length);
@@ -157,11 +161,11 @@ int main(int argc, char const *argv[]) {
    else{
      printf("Succes : the node was correctly deleted\n");
    }
-   if(window_remove(test, seqnum) < 0){
+   if(window_remove(test, pkt_get_seqnum(pktest)) < 0){
      printf("Error : the node is not removed from the buffer\n");
      return EXIT_FAILURE;
    }
-   else if(test->size_used == 0 && test->length = length && test->buffer != NULL){
+   else if(test->size_used == 0 && test->length == length && test->buffer != NULL){
      printf("Success : the node was correctly removed from the buffer\n");
    }
    else{
@@ -179,4 +183,3 @@ int main(int argc, char const *argv[]) {
    printf("Success : all the steps are correctly effectued\n");
   return EXIT_SUCCESS;
 }
-*/
