@@ -13,6 +13,11 @@
     uint32_t crc2;
 };*/
 
+int receive_data(int sfd, char* filename, int optionf)
+{
+  return 0;
+}
+
 int main(int argc, char* argv[])
 {
   int optionf=0;
@@ -46,5 +51,9 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
+  if(receive_data(sfd, filename, optionf) < 0) {
+		fprintf(stderr, "Reception error\n");
+		return EXIT_FAILURE;
+	}
   return EXIT_SUCCESS;
 }

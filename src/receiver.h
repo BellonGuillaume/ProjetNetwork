@@ -13,3 +13,5 @@
 #include <netdb.h>
 #include "socket_manipulation.c"
 #include "commonlib.c"
+
+int receive_data(int sfd, char* filename, int optionf);

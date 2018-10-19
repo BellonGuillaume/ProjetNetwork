@@ -13,6 +13,11 @@
     uint32_t crc2;
 };*/
 
+int send_data(int sfd, char* filename, int optionf)
+{
+	return 0;
+}
+
 int main (int argc, char* argv[])
 {
   int optionf = 0;
@@ -37,8 +42,8 @@ int main (int argc, char* argv[])
 		fprintf(stderr, "Failed to create the socket\n");
 		return EXIT_FAILURE;
 	}
-	if(send_socket(sfd, filename, optionf) < 0) {
-		fprintf(stderr, "Erreur dans l'envoi\n");
+	if(send_data(sfd, filename, optionf) < 0) {
+		fprintf(stderr, "Sending error\n");
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

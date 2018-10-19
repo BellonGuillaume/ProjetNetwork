@@ -15,3 +15,5 @@
 #include <ctype.h>
 #include "socket_manipulation.c"
 #include "commonlib.c"
+
+int send_data(int sfd, char* filename, int optionf);
