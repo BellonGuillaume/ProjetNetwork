@@ -8,18 +8,19 @@
 
 //const time_t TIMEOUT_TIME;
 
-typedef struct window {
-  int length;
-  int size;
-  node_t* buffer;
-} window_t;
-
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
   //node_t next;
   //time_t time;
 } node_t;
+
+typedef struct window {
+  int length;
+  int size;
+  node_t** buffer;
+} window_t;
+
 
 window_t* window_new(int length)
 {
