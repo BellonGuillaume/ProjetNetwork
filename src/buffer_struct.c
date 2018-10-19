@@ -98,6 +98,18 @@ int window_add(window_t* window, pkt_t* pkt)
   return -1;
 }
 
+int window_remove(window_t* window, int seqnum)
+{
+  if(window->size_used==0)
+    return -1;
+  int i;
+  for(i=0;window->buffer[i]->seqnum!=seqnum;i++);
+  if(i==window->length-1)
+    return -1;
+  window->buffer[i]=NULL;
+  return 0;
+}
+/*
 int main(int argc, char const *argv[]) {
   int length = 10;
   window_t* test = window_new(length);
@@ -167,3 +179,4 @@ int main(int argc, char const *argv[]) {
    printf("Success : all the steps are correctly effectued\n");
   return EXIT_SUCCESS;
 }
+*/

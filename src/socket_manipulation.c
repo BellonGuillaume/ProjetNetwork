@@ -123,7 +123,7 @@ if(connect(sfd,(struct sockaddr *) &src_addr,addrlen)==-1){
 return 0;
 }
 
-int send_buf(int sfd, char* buf; size_t len)
+int send_buf(int sfd, char* buf, size_t len)
 {
   int length;
   for(int totalLength=0;totalLength<len;totalLength+=length)
@@ -203,7 +203,7 @@ int receive_pkt(int sfd, pkt_t* pkt)
   //Just in case
   pkt_del(pkt);
   pkt=pkt_new();
-  int signal=receive_buf(stf,buf,&len);
+  int signal=receive_buf(sfd,buf,&len);
   if(signal<0)
   {
     fprintf(stderr,"Error receiving\n");
