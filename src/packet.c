@@ -44,29 +44,29 @@ void pkt_del(pkt_t *pkt)
 }
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt){
-    
+
     pkt_status_code code;
-    
+
     if(len < 4) return E_NOHEADER;
     if(len < 12) return E_UNCONSISTENT;
-    
+
     memcpy(pkt, data, 12);
-    
+
     //CRC1
     uint32_t crc1_test;
     crc1_test = crc32(0, (Bytef *) data, 8);
     //printf("crc1 decode %d\n",crc1_test);
-    
+
     //NTOH LENGTH
     code=pkt_set_length(pkt,ntohs(pkt_get_length(pkt)));
     uint16_t length=pkt_get_length(pkt);
-    
+
     //PAYLOAD
     pkt_set_payload(pkt,data+12,length);
-    
+
     //CRC2
     memcpy(&(pkt->crc2),data+len-4,4);
-    
+
     //VERIFICATIONS
     if((pkt_get_type(pkt) != PTYPE_DATA)&&(pkt_get_type(pkt) != PTYPE_ACK)&&(pkt_get_type(pkt) != PTYPE_NACK)){
         return E_TYPE;
@@ -77,7 +77,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt){
     if((pkt->tr == 1)&&(length!=0)){
         return E_TR;
     }
-   
+
     //NTOH CRC1
     uint32_t crc1=ntohl(pkt->crc1);
     code=pkt_set_crc1(pkt,crc1);
@@ -102,7 +102,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt){
     {
         return code;
     }
-    
+
     //TEST CRC2
     uint32_t crc2_test;
     if(length>0)
@@ -132,16 +132,16 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     //LENGTHS
     uint16_t length=pkt_get_length(pkt);
     uint16_t nlength=htons(length);
-    
+
     //MEMCPY HEADER
     memcpy(buf, pkt, 12);
     *len=12;
     pkt_t* temp=(pkt_t*) buf;
     uint32_t test_crc2=0;
-    
+
     //HTON LENGTH
     temp->length=nlength;
-    
+
     //CRC1
     uint32_t test_crc1=0;
     test_crc1=crc32(test_crc1,(Bytef *) buf, 8);
@@ -306,15 +306,46 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
     {
         return PKT_OK;
     }
-    
+
     pkt->payload=malloc(length);
-    
+
     if(pkt->payload==NULL)
     {
         return E_NOMEM;
     }
-    
+
     memcpy(pkt->payload,data,length);
-    pkt_set_length(pkt,length);    
+    pkt_set_length(pkt,length);
     return PKT_OK;
+}
+
+pkt_t* pkt_initialize(char* payload, int length, uint8_t seqnum, uint8_t window)
+{
+  pkt_t* pkt=pkt_new();
+  if(pkt_set_type(pkt,1)!=PKT_OK)
+  {
+    return NULL;
+    pkt_del(pkt);
+  }
+  if(pkt_set_seqnum(pkt,seqnum)!=PKT_OK)
+  {
+    return NULL;
+    pkt_del(pkt);
+  }
+  if(pkt_set_window(pkt,window)!=PKT_OK)
+  {
+    return NULL;
+    pkt_del(pkt);
+  }
+  if(pkt_set_length(pkt,length)!=PKT_OK)
+  {
+    return NULL;
+    pkt_del(pkt);
+  }
+  if(pkt_set_payload(pkt,payload,(size_t) length)!=PKT_OK)
+  {
+    return NULL;
+    pkt_del(pkt);
+  }
+  return pkt;
 }

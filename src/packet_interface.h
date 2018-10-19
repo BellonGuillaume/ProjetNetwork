@@ -48,7 +48,7 @@ void pkt_del(pkt_t*);
  * - Le CRC32 du header recu est le même que celui decode a la fin
  *   du header (en considerant le champ TR a 0)
  * - S'il est present, le CRC32 du payload recu est le meme que celui
- *   decode a la fin du payload 
+ *   decode a la fin du payload
  * - Le type du paquet est valide
  * - La longueur du paquet et le champ TR sont valides et coherents
  *   avec le nombre d'octets recus.
@@ -120,5 +120,7 @@ pkt_status_code pkt_set_payload(pkt_t*,
  * native de la machine!
  */
 pkt_status_code pkt_set_crc2(pkt_t*, const uint32_t crc2);
+
+pkt_t* pkt_initialize(char* payload, int length, uint8_t seqnum, uint8_t window);
 
 #endif  /* __PACKET_INTERFACE_H_ */
