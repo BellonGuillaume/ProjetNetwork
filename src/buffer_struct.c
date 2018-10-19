@@ -16,8 +16,8 @@ typedef struct node {
 } node_t;
 
 typedef struct window {
-  int length;
-  int size;
+  int length; //TAILLE DE LA WINDOW
+  int size_used; //NOMBRE DE PLACES OCCUPEES
   node_t** buffer;
 } window_t;
 
@@ -26,7 +26,7 @@ window_t* window_new(int length)
 {
   window_t* window = malloc(sizeof(window_t));
   window->length = length;
-  window->size = 0;
+  window->size_used = 0;
   window->buffer = calloc(length,sizeof(node_t));
 }
 
@@ -86,13 +86,13 @@ void node_del(node_t* node)
 
 int window_add(window_t* window, pkt_t* pkt)
 {
-  if(window->size<window->length)
+  if(window->size_used<window->length)
   {
     int i;
     for(i=0;window->buffer[i]!=NULL;i++);
     node_t* node = node_new(pkt);
     window->buffer[i]=node;
-    window->size++;
+    window->size_used++;
     return 0;
   }
   return -1;
