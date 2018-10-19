@@ -68,22 +68,17 @@ void node_del(node_t* node)
   }
   return;
 }
- /*
-  * Checks if the RTT has expired on one of the window's node and resend it
-  * @PRE: socket must be ready to be written on.
-  * @POST: one of the elements that had its RTT expired has been sent.
-  * @RETURN: 0 if none of the elements had its RTT expired, 1 if one was sent.
- */
-/*int window_check_RTT(int sfd, window_t* window)
+
+/*int window_check_RTT(window_t* window)
 {
   int count=0;
   for(int i=0;i<window->length;i++)
   {
     if(((window->buffer[i])->time)+TIMEOUT_TIME<getTime())
     {
-      send_pkt(sfd, (window->buffer[i])->pkt);
+      send_socket((window->buffer[i])->pkt);
       count++;
-      return count?
+      //return count?
     }
   }
   return count;
@@ -94,7 +89,7 @@ int window_add(window_t* window, pkt_t* pkt)
   if(window->size_used<window->length)
   {
     int i;
-    for(i=0;window->buffer[i]!=NULL;i++);
+    for(i=0;window->buffer[i]!=NULL;i++){};
     node_t* node = node_new(pkt);
     window->buffer[i]=node;
     window->size_used++;
@@ -103,14 +98,72 @@ int window_add(window_t* window, pkt_t* pkt)
   return -1;
 }
 
-int window_remove(window_t* window, int seqnum)
-{
-  if(window->size_used==0)
-    return -1;
-  int i;
-  for(i=0;window->buffer[i]->seqnum!=seqnum;i++);
-  if(i==window->length-1)
-    return -1;
-  window->buffer[i]=NULL;
-  return 0;
+int main(int argc, char const *argv[]) {
+  int length = 10;
+  window_t* test = window_new(length);
+  if (test == NULL){
+    printf("Error : the created window is NULL\n");
+    return EXIT_FAILURE;
+  }
+  else if(test->length == length && test->size_used == 0 && test->buffer != NULL){
+    printf("Success : the window is correctly created\n");
+  }
+  else {
+    printf("Error : the created window is not initialized correctly\n");
+    return EXIT_FAILURE;
+  }
+  pkt_t* pktest = pkt_new();
+  node_t* nodetest = node_new(pktest);
+  if(nodetest==NULL)
+  {
+    printf("Error : the node test was not created\n");
+    return EXIT_FAILURE;
+  }
+  else if(nodetest->pkt == pktest && nodetest->seqnum == pkt_get_seqnum(pktest)){
+    printf("Success : the node test is correctly created\n");
+  }
+  else{
+    printf("Error : the created node is not initialized correctly\n");
+    return EXIT_FAILURE;
+  }
+   if(window_add(test, pktest) < 0){
+     printf("Error : the window was not added to the buffer\n");
+     return EXIT_FAILURE;
+   }
+   else if(test->length == length && test->size_used == 1 && test->buffer != NULL){
+     printf("Success : the pkt was correctly added to the buffer\n");
+   }
+   else{
+     printf("Error : the pkt wasn't correctly added to the buffer\n");
+     return EXIT_FAILURE;
+   }
+   node_del(nodetest);
+   if(nodetest!=NULL){
+     printf("Error : the node wasn't deleted correctly\n");
+    return EXIT_FAILURE;
+   }
+   else{
+     printf("Succes : the node was correctly deleted\n");
+   }
+   if(window_remove(test, seqnum) < 0){
+     printf("Error : the node is not removed from the buffer\n");
+     return EXIT_FAILURE;
+   }
+   else if(test->size_used == 0 && test->length = length && test->buffer != NULL){
+     printf("Success : the node was correctly removed from the buffer\n");
+   }
+   else{
+     printf("Error : the window wasn't updated\n");
+     return EXIT_FAILURE;
+   }
+   window_del(test);
+   if(test!=NULL){
+     printf("Error : the window wasn't correctly deleted\n");
+     return EXIT_FAILURE;
+   }
+   else{
+     printf("Success : the window was correctly deleted\n");
+   }
+   printf("Success : all the steps are correctly effectued\n");
+  return EXIT_SUCCESS;
 }
