@@ -183,7 +183,7 @@ int receive_buf(int sfd, char* buf, int* len)
                 fprintf(stderr,"Erreur read socket\n");
                 return;
             }*/
-            if(length==0 || length==EOF || !strcmp(buf,"EOF"))//?
+            if(length==0 || length==EOF || strcmp(buf,"EOF")==0)
             {
                 //fprintf(stderr,"Fin du programme");
                 return 1;

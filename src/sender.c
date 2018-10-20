@@ -160,14 +160,14 @@ int send_data(int sfd, char* filename, int optionf)
 					fprintf(stderr,"Error receiving ACK/NACK\n");
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
-				if(typeAck!=PTYPE_ACK && typeAck != PTYPE_NACK)
+				if(typeAck==PTYPE_DATA)
 				{
 					countTypeDiscard++;
 					pkt_del(ack);
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
-					//printf("Ack recu\n");
+					printf("Ack recu\n");
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
