@@ -58,7 +58,7 @@ int receive_data(int sfd, char* filename, int optionf)
     }
     else
     {
-      fd=open(filename,O_WRONLY);
+      fd=open(filename,O_WRONLY|O_CREAT,S_IRWXU|S_IRWXO);
       if(fd<0)
       {
         fprintf(stderr,"Error: file might not exist\n");
