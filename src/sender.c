@@ -124,7 +124,7 @@ int send_data(int sfd, char* filename, int optionf)
 						}
 						send_pkt(sfd,pkt);
 						memset(bufsender,0,512);
-						if(window_add(window,pkt)<1)
+						if(window_add(window,pkt)<0)
 						{
 							fprintf(stderr, "Error : pkt not added on the window\n");
 							if(close(fd)<0){

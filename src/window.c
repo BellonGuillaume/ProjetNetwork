@@ -102,6 +102,7 @@ int window_add(window_t* window, pkt_t* pkt)
 {
   if(window->size_used<window->length)
   {
+    //printf("%d,%d\n",window->size_used,window->length);
     node_t* node = node_new(pkt);
     window->buffer[window->size_used]=node;
     window->size_used++;
