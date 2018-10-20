@@ -7,13 +7,12 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-const time_t TIMEOUT_TIME = 4 * CLOCKS_PER_SEC;
+const clock_t TIMEOUT_TIME = 4 * CLOCKS_PER_SEC/60;
 
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
-  //node_t next;
-  time_t time;
+  clock_t time;
 } node_t;
 
 typedef struct window {
@@ -44,21 +43,6 @@ window_t* window_new(int length)
   return window;
 }
 
-void window_del(window_t* window)
-{
-  if(window!=NULL)
-  {
-    if(window->buffer!=NULL)
-    {
-      free(window->buffer);
-      window->buffer=NULL;
-    }
-    free(window);
-    window=NULL;
-  }
-  return;
-}
-
 node_t* node_new(pkt_t* pkt)
 {
   node_t* node = malloc(sizeof(node_t));
@@ -78,6 +62,28 @@ void node_del(node_t* node)
       node->pkt=NULL;
     }
     free(node);
+  }
+  return;
+}
+
+void window_del(window_t* window)
+{
+  if(window!=NULL)
+  {
+    if(window->buffer!=NULL)
+    {
+      for(int i=0;i<window->length;i++)
+      {
+        if(window->buffer[i]!=NULL)
+        {
+          node_del(window->buffer[i]);
+        }
+      }
+      free(window->buffer);
+      window->buffer=NULL;
+    }
+    free(window);
+    window=NULL;
   }
   return;
 }

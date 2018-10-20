@@ -30,7 +30,7 @@ int send_data(int sfd, char* filename, int optionf)
 	int fd;
 	int eof_reached=0;
 	int ack_received=0;
-	time_t RTT = 4;
+	clock_t RTT = 4;
 	if(!optionf)
 	{
 		fd=0;
@@ -60,14 +60,16 @@ int send_data(int sfd, char* filename, int optionf)
 		node_t* n_RTT = window_check_RTT(window);
 		if(n_RTT == NULL)
 		{
-
+			//printf("NULL\n");
 			struct pollfd fds[2];
 
 			fds[0].fd=fd;
 			fds[0].events=POLLIN;
 			fds[1].fd = sfd;
 			fds[1].events = POLLIN;
-			ret = poll(fds, 2, -1 );
+			//printf("prépoll\n");
+			ret = poll(fds, 2, 20);
+			//printf("postpoll\n");
 			if (ret<0) {
 				fprintf(stderr,"select error\n");
 				fprintf(stderr,"ERROR: %s\n", strerror(errno));
@@ -75,8 +77,10 @@ int send_data(int sfd, char* filename, int optionf)
 				close(fd);
 				return -1;
 			}
+			//printf("passé\n");
 			if (fds[0].revents & POLLIN)
 			{
+				//printf("présent1\n");
 				if(window_is_full(window))
 				{
 					pkt_t* ack = pkt_new();
@@ -92,6 +96,7 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 					else if(typeAck==PTYPE_ACK)
 					{
+						//printf("Ack recu\n");
 						window_remove(window,pkt_get_seqnum(ack));
 					}
 					else if(typeAck==PTYPE_NACK)
@@ -143,6 +148,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if (fds[1].revents & POLLIN) //TODO : double poll
 			{
+				//printf("présent2\n");
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
@@ -156,6 +162,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
+					//printf("Ack recu\n");
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
@@ -184,10 +191,13 @@ int send_data(int sfd, char* filename, int optionf)
 		}
 		else //RTT atteint
 		{
+			//printf("Resending pkt\n");
 			send_pkt(sfd,n_RTT->pkt);
 			n_RTT->time = clock();
 		}
+		//printf("futur\n");
 	} //Fin de la boucle while
+	window_del(window);
 	if(fd!=0)
 	close(fd);
 	return 0;

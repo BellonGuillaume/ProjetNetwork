@@ -30,7 +30,7 @@ void test()
 	}
 	else
 	{
-		sleep(1);
+		sleep(5);
 		system("../sender -f test.txt localhost 6565");
 	}
 
