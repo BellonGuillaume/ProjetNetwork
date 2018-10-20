@@ -99,6 +99,8 @@ int receive_data(int sfd, char* filename, int optionf)
 
       pkt_t* pkt=pkt_new();
       int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
+      printf(".");
+      fflush(stdout);
       if(err==2)
       {
         uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
