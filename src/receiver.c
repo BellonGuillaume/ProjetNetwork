@@ -2,6 +2,9 @@
 
 //TODO: Checker que les seqnum et autres uint8_t ne sont pas écrits en int
 
+int countNack=0;
+int countAck=0;
+
 int send_ack(int sfd, int seqnum)
 {
   ptypes_t type=PTYPE_ACK;
@@ -10,20 +13,22 @@ int send_ack(int sfd, int seqnum)
   return -1;
   int err;
   err=pkt_set_type(ack,type);
-  err=err & send_pkt(sfd,ack);
+  err=err && send_pkt(sfd,ack);
+  countAck++;
   pkt_del(ack);
   return err;
 }
 
 int send_nack(int sfd, int seqnum)
 {
+  countNack++;
   ptypes_t type=PTYPE_NACK;
   pkt_t* nack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH); //TODO :mettre le tr à 1?
   if(nack==NULL)
   return -1;
   int err;
   err=pkt_set_type(nack,type);
-  err=err & send_pkt(sfd,nack);
+  err=err && send_pkt(sfd,nack);
   pkt_del(nack);
   return err;
 }
@@ -256,5 +261,7 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
   printf("=== Data successfully received ===\n");
+  printf("Number of NACK : %d\n",countNack);
+  printf("Number of ACK : %d\n",countAck);
   return EXIT_SUCCESS;
 }

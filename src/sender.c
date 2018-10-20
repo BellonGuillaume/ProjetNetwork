@@ -13,6 +13,8 @@ char* payload;
 uint32_t crc2;
 };*/
 
+int countData=0;
+
 int send_data(int sfd, char* filename, int optionf)
 {
 	/* TEST
@@ -105,6 +107,7 @@ int send_data(int sfd, char* filename, int optionf)
 						pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 						if(pkt!=NULL)
 						{
+							countData++;
 							send_pkt(sfd,pkt);
 						}
 					}
@@ -134,6 +137,7 @@ int send_data(int sfd, char* filename, int optionf)
 						close(fd);
 						return -1;
 					}
+					countData++;
 					send_pkt(sfd,pkt);
 					memset(bufsender,0,512);
 					if(window_add(window,pkt)<0)
@@ -175,6 +179,7 @@ int send_data(int sfd, char* filename, int optionf)
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
+						countData;
 						send_pkt(sfd,pkt);
 					}
 				}
@@ -194,6 +199,7 @@ int send_data(int sfd, char* filename, int optionf)
 		{
 			//printf("Resending pkt\n");
 			send_pkt(sfd,n_RTT->pkt);
+			countData++;
 			n_RTT->time = clock();
 		}
 		//printf("futur\n");
@@ -238,6 +244,7 @@ int main (int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 	printf("=== Data successfully sent ===\n");
+	printf("Number of Data sent : %d\n",countData);
 	return EXIT_SUCCESS;
 
 }
