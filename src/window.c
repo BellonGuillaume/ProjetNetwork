@@ -110,7 +110,14 @@ int window_remove(window_t* window, int seqnum)
   return 0;
 }
 
-int window_
+int window_is_full(window_t* window)
+{
+  if(window->length==window->size_used)
+  {
+    return 1;
+  }
+  return 0;
+}
 
 /*
 

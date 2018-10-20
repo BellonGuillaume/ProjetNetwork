@@ -1,8 +1,8 @@
-windowtest: packet.o buffer_struct.o
-	gcc -o windowtest packet.o  buffer_struct.o -lz
+windowtest: packet.o window.o
+	gcc -o windowtest packet.o  window.o -lz
 
-packet.o: packet.c buffer_struct.c
-	gcc -c packet.c buffer_struct.c -lz
+packet.o: packet.c window.c
+	gcc -c packet.c window.c -lz
 
 clean :
-	rm windowtest packet.o buffer_struct.o
+	rm windowtest packet.o window.o
