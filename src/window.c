@@ -11,7 +11,6 @@
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
-  int ack;
   //node_t next;
   //time_t time;
 } node_t;
@@ -64,7 +63,6 @@ node_t* node_new(pkt_t* pkt)
   node_t* node = malloc(sizeof(node_t));
   node->seqnum=pkt_get_seqnum(pkt);
   node->pkt=pkt;
-  node->ack=0;
   //node->time=getTime();
   return node;
 }
@@ -123,29 +121,27 @@ pkt_t* window_find(window_t* window, int seqnum)
   return NULL;
 }
 
-int window_try_remove_first(window_t* window)
+void window_remove_first(window_t* window)
 {
-  if(window->buffer[0]->ack==1)
+  node_del(window->buffer[0]);
+  int i;
+  for(i=1;i<window->length;i++)
   {
-    node_del(window->buffer[0]);
-    int i;
-    for(i=1;i<window->length;i++)
-    {
-      window->buffer[i-1]=window->buffer[i];
-    }
-    window->buffer[window->length-1]=NULL;
-    window->size_used--;
-    return 1;
+    window->buffer[i-1]=window->buffer[i];
   }
-  return 0;
+  window->buffer[window->length-1]=NULL;
+  window->size_used--;
 }
 
-void window_remove_all(window_t* window)
+void window_remove_until(window_t* window,int i)
 {
-  while(window_try_remove_first(window)==1);
+  for(int j=0;j<=i;j++)
+  {
+    window_remove_first(window);
+  }
 }
 
-void window_try_remove(window_t* window, int seqnum)
+void window_remove(window_t* window, int seqnum)
 {
   if(window->size_used==0)
     return;
@@ -153,13 +149,7 @@ void window_try_remove(window_t* window, int seqnum)
   for(i=0;window->buffer[i]->seqnum!=seqnum && i<window->length;i++);
   if(i==window->length)
     return;
-  if(i==0)
-  {
-    window->buffer[0]->ack=1;
-    window_remove_all(window);
-    return;
-  }
-  window->buffer[i]->ack=1;
+  window_remove_until(window,i);
 }
 
 int window_is_full(window_t* window)

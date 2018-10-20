@@ -76,7 +76,6 @@ int send_data(int sfd, char* filename, int optionf)
 						if(receive_pkt(sfd,ack)!=PKT_OK)
 						{
 							fprintf(stderr,"Error receiving ACK/NACK\n");
-							return -1;
 						}
 						ptypes_t typeAck = pkt_get_type(ack);
 						if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
@@ -86,7 +85,7 @@ int send_data(int sfd, char* filename, int optionf)
 						}
 						else if(typeAck==PTYPE_ACK)
 						{
-							window_try_remove(window,pkt_get_seqnum(ack));
+							window_remove(window,pkt_get_seqnum(ack));
 						}
 						else if(typeAck==PTYPE_NACK)
 						{
@@ -141,7 +140,6 @@ int send_data(int sfd, char* filename, int optionf)
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
 					fprintf(stderr,"Error receiving ACK/NACK\n");
-					return -1;
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
 				if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
@@ -151,7 +149,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
-					window_try_remove(window,pkt_get_seqnum(ack));
+					window_remove(window,pkt_get_seqnum(ack));
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
