@@ -183,7 +183,7 @@ int receive_buf(int sfd, char* buf, int* len)
                 fprintf(stderr,"Erreur read socket\n");
                 return;
             }*/
-            if(length==EOF)//?
+            if(length==0 || length==EOF || !strcmp(buf,"EOF"))//?
             {
                 //fprintf(stderr,"Fin du programme");
                 return 1;
@@ -212,7 +212,7 @@ int receive_pkt(int sfd, pkt_t* pkt)
   }
   if(signal>0)
   {
-    fprintf(stdout,"Finir programme\n");
+    //fprintf(stdout,"Finir programme\n");
     return 1;
   }
   //printf("about to decode\n");

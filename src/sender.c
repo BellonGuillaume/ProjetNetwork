@@ -28,6 +28,8 @@ int send_data(int sfd, char* filename, int optionf)
 		uint8_t window_length=4;
     int ret=-1;
 		int fd;
+		int eof_reached=0;
+		int ack_received=0;
 		if(!optionf)
 		{
 			fd=0;
@@ -52,7 +54,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			return EXIT_FAILURE;
 		}
-    while(1) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
+    while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
     {					//TODO gérer les messages de déconnection
         struct pollfd fds[2];
 
@@ -108,7 +110,7 @@ int send_data(int sfd, char* filename, int optionf)
 									return -1;
 								}
                 //printf("Fin du programme!\n");
-                return 0;
+                eof_reached=1;
             }
 						//GERER SEQNUM ET WINDOW DU SR
 						uint8_t seqnum=sseqnum;
@@ -150,6 +152,10 @@ int send_data(int sfd, char* filename, int optionf)
 				else if(typeAck==PTYPE_ACK)
 				{
 					window_remove(window,pkt_get_seqnum(ack));
+					if(eof_reached && window->size_used==0)
+					{
+						ack_received=1;
+					}
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
@@ -160,6 +166,16 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 				}
       }
+			if(eof_reached && ack_received)
+			{
+				if(write(sfd,"EOF",sizeof("EOF"))<0)
+				{
+					fprintf(stderr, "Error : sending ending flag\n");
+					if(fd!=0)
+						close(fd);
+					return -1;
+				}
+			}
     }
 	if(fd!=0)
 	close(fd);
@@ -176,9 +192,9 @@ int main (int argc, char* argv[])
   {
     return EXIT_FAILURE;
   }
-  printf("Address: %s\nPort: %d\n",first_address,port);
+  printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
   if(optionf)
-    printf("Filename: %s\n",filename);
+    printf("--- Filename: %s ---\n",filename);
 	struct sockaddr_in6 addr;
 	const char *err = real_address(first_address, &addr);
 	if (err!=NULL) {
@@ -194,6 +210,7 @@ int main (int argc, char* argv[])
 		fprintf(stderr, "Sending error\n");
 		return EXIT_FAILURE;
 	}
+	printf("=== Data successfully sent ===\n");
 	return EXIT_SUCCESS;
 
 }

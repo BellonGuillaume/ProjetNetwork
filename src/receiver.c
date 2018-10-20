@@ -111,7 +111,7 @@ int receive_data(int sfd, char* filename, int optionf)
       }
       else if(err==1)
       {
-        printf("Fin du receiver\n");
+        //printf("Fin du receiver\n");
         return 0;
       }
       else if(err==0)
@@ -217,9 +217,9 @@ int main(int argc, char* argv[])
   {
     return EXIT_FAILURE;
   }
-  printf("Address: %s\nPort: %d\n",first_address,port);
+  printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
   if(optionf)
-  printf("Filename: %s\n",filename);
+  printf("--- Filename: %s ---\n",filename);
   struct sockaddr_in6 addr;
   const char* err= real_address(first_address, &addr);
   if(err!=NULL)
@@ -245,5 +245,6 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Reception error\n");
 		return EXIT_FAILURE;
 	}
+  printf("=== Data successfully received ===\n");
   return EXIT_SUCCESS;
 }
