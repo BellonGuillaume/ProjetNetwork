@@ -25,6 +25,10 @@ typedef struct window {
 window_t* window_new(int length)
 {
   window_t* window = malloc(sizeof(window_t));
+  if(window == NULL) {
+    fprintf(stderr,"Error : malloc new window");
+    return NULL;
+  }
   window->length = length;
   window->size_used = 0;
   window->buffer = calloc(length,sizeof(node_t));
