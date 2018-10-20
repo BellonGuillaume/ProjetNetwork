@@ -39,6 +39,7 @@ int process_data(int fd, pkt_t* pkt)
       close(fd);
     return 0;
   }
+  return 0;
 }
 
 int receive_data(int sfd, char* filename, int optionf)
