@@ -25,7 +25,7 @@ int send_data(int sfd, char* filename, int optionf)
 	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
 	pkt_del(pkt); //à enlever
 	*/
-		uint8_t window_length=1;
+		uint8_t window_length=4;
     int ret=-1;
 		int fd;
 		if(!optionf)
