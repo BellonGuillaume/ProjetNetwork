@@ -115,7 +115,7 @@ int receive_data(int sfd, char* filename, int optionf)
       else if(err==1)
       {
         //printf("Fin du receiver\n");
-
+        free(buffer);
         return 0;
       }
       else if(err==0)
@@ -226,6 +226,7 @@ int main(int argc, char* argv[])
   {
     return EXIT_FAILURE;
   }
+  printf("\n=== Receiver ===\n");
   printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
   if(optionf)
   printf("--- Filename: %s ---\n",filename);

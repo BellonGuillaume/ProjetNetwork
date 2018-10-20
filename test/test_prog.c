@@ -8,46 +8,41 @@
 #include <string.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-#define N 10
 
+int n=1;
 void test()
 {
 	int fd=open("test.txt",O_CREAT|O_WRONLY,S_IRWXU|S_IRWXO);
-	for(int j=0;j<N;j++)
+	for(int j=0;j<n;j++)
 	{
 		for(int i=0;i<10;i++)
 		{
-			char buf[sizeof(int)];
-			sprintf(buf,"%d",i);
-			write(fd,buf,sizeof(int));
+			char buf[1];
+			buf[0]=i+'0';
+			write(fd,buf,1);
 		}
 	}
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("../receiver -f out.txt localhost 6565");
+		system("../receiver -f out.txt localhost 1341");
 		exit(0);
 	}
-	else
-	{
-		sleep(5);
-		system("../sender -f test.txt localhost 6565");
-	}
-
+	sleep(1);
+	system("../sender -f test.txt localhost 1341");
+	close(pid);
 	close(fd);
 	fd= open("out.txt",O_RDONLY);
 	int err=0;
-	for(int j=0;j<N;j++)
+	for(int j=0;j<n;j++)
 	{
 		for(int i=0;i<10;i++)
 		{
-			char buf[sizeof(int)];
-			char buf2[sizeof(int)];
-			sprintf(buf2,"%d",i);
-			read(fd,buf,sizeof(int));
-			//printf("%s --- %d\n",buf,i);
-			if(strcmp(buf,buf2)!=0)
+			char buf[1];
+			read(fd,buf,1);
+			if(buf[0]!=(i+'0'))
 			{
+				//printf("%c - %c\n",buf[0],i+'0');
 				err=1;
 			}
 		}
@@ -59,6 +54,11 @@ void test()
 
 int main (int argc, char* argv[])
 {
+	if(argc>1)
+	{
+		n=atoi(argv[1]);
+	}
+	printf("Test envoi de %d kb.\n",n/100);
 	CU_initialize_registry();
   CU_pSuite suite = CU_add_suite("test", 0, 0);
   CU_add_test(suite, "test", test);

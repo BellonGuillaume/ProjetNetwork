@@ -55,6 +55,7 @@ int send_data(int sfd, char* filename, int optionf)
 		}
 		return EXIT_FAILURE;
 	}
+	int countTypeDiscard=0;
 	while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
 	{					//TODO gérer les messages de déconnection
 		node_t* n_RTT = window_check_RTT(window);
@@ -91,7 +92,7 @@ int send_data(int sfd, char* filename, int optionf)
 					ptypes_t typeAck = pkt_get_type(ack);
 					if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
 					{
-						fprintf(stderr,"Sender received DATA\n");
+						countTypeDiscard++;
 						pkt_del(ack);
 					}
 					else if(typeAck==PTYPE_ACK)
@@ -157,7 +158,7 @@ int send_data(int sfd, char* filename, int optionf)
 				ptypes_t typeAck = pkt_get_type(ack);
 				if(typeAck!=PTYPE_ACK && typeAck != PTYPE_NACK)
 				{
-					fprintf(stderr,"Error : Sender received DATA\n");
+					countTypeDiscard++;
 					pkt_del(ack);
 				}
 				else if(typeAck==PTYPE_ACK)
@@ -200,6 +201,10 @@ int send_data(int sfd, char* filename, int optionf)
 	window_del(window);
 	if(fd!=0)
 	close(fd);
+	if(countTypeDiscard!=0)
+	{
+		fprintf(stderr,"PTYPE_DATA pkt discarded by sender : %d \n",countTypeDiscard);
+	}
 	return 0;
 }
 
@@ -213,6 +218,7 @@ int main (int argc, char* argv[])
 	{
 		return EXIT_FAILURE;
 	}
+	printf("\n=== Sender ===\n");
 	printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
 	if(optionf)
 	printf("--- Filename: %s ---\n",filename);
