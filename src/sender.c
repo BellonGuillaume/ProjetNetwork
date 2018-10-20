@@ -46,7 +46,7 @@ int send_data(int sfd, char* filename, int optionf)
 		int sseqnum=0;
     char bufsender[512];
     memset(bufsender,0,512);
-		window_t* send_window = window_new(window_length);
+		window_t* send_window = window_new(n_send);
 		if(send_window == NULL){
 			if(close(fd)<0){
 				fprintf(stderr, "Error : the file wasn't closed\n");
@@ -54,8 +54,8 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			return EXIT_FAILURE;
 		}
-    while(1)
-    {
+    while(1) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
+    {					//TODO gérer les messages de déconnection
         struct pollfd fds[2];
 
         fds[0].fd=fd;
@@ -94,6 +94,15 @@ int send_data(int sfd, char* filename, int optionf)
 						send_pkt(sfd,pkt);
             pkt_del(pkt);
 						memset(bufsender,0,512);
+						if(window_add(send_window,pkt)<1)
+						{
+							fprintf(stderr, "Error : pkt not added on the window\n");
+							if(close(fd)<0){
+								fprintf(stderr, "Error : the file wasn't closed\n");
+								return EXIT_FAILURE;
+							}
+							return EXIT_FAILURE;
+						}
             length=0;
         }
 
