@@ -1,4 +1,5 @@
 #include "sender.h"
+#include <math.h>
 
 //Rappel de la structure
 /*struct __attribute__((__packed_)) pkt {
@@ -25,7 +26,8 @@ int send_data(int sfd, char* filename, int optionf)
 	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
 	pkt_del(pkt); //à enlever
 	*/
-
+		int n_send = 5;
+		int window_length = pow(2,n-1);
     int ret=-1;
 		int fd;
 		if(!optionf)
@@ -44,6 +46,14 @@ int send_data(int sfd, char* filename, int optionf)
 		int sseqnum=0;
     char bufsender[512];
     memset(bufsender,0,512);
+		window_t* send_window = window_new(window_length);
+		if(send_window == NULL){
+			if(close(fd)<0){
+				fprintf(stderr, "Error : the file wasn't closed\n");
+				return EXIT_FAILURE;
+			}
+			return EXIT_FAILURE;
+		}
     while(1)
     {
         struct pollfd fds[2];
