@@ -11,6 +11,7 @@
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
+  int ack;
   //node_t next;
   //time_t time;
 } node_t;
@@ -36,6 +37,11 @@ window_t* window_new(int length)
   window->length = length;
   window->size_used = 0;
   window->buffer = calloc(length,sizeof(node_t));
+  for(int i=0;i<window->length;i++)
+  {
+    window->buffer[i]=NULL;
+  }
+  return window;
 }
 
 void window_del(window_t* window)
@@ -58,6 +64,7 @@ node_t* node_new(pkt_t* pkt)
   node_t* node = malloc(sizeof(node_t));
   node->seqnum=pkt_get_seqnum(pkt);
   node->pkt=pkt;
+  node->ack=0;
   //node->time=getTime();
   return node;
 }
@@ -95,27 +102,63 @@ int window_add(window_t* window, pkt_t* pkt)
 {
   if(window->size_used<window->length)
   {
-    int i;
-    for(i=0;window->buffer[i]!=NULL;i++){};
     node_t* node = node_new(pkt);
-    window->buffer[i]=node;
+    window->buffer[window->size_used]=node;
     window->size_used++;
     return 0;
   }
   return -1;
 }
 
-int window_remove(window_t* window, int seqnum)
+pkt_t* window_find(window_t* window, int seqnum)
+{
+  for(int i=0;i<window->size_used;i++)
+  {
+    if(window->buffer[i]->seqnum==seqnum)
+    {
+      return window->buffer[i]->pkt;
+    }
+  }
+  return NULL;
+}
+
+int window_try_remove_first(window_t* window)
+{
+  if(window->buffer[0]->ack==1)
+  {
+    node_del(window->buffer[0]);
+    int i;
+    for(i=1;i<window->length;i++)
+    {
+      window->buffer[i-1]=window->buffer[i];
+    }
+    window->buffer[window->length-1]=NULL;
+    window->size_used--;
+    return 1;
+  }
+  return 0;
+}
+
+void window_remove_all(window_t* window)
+{
+  while(window_try_remove_first(window)==1);
+}
+
+void window_try_remove(window_t* window, int seqnum)
 {
   if(window->size_used==0)
-    return -1;
+    return;
   int i;
-  for(i=0;window->buffer[i]->seqnum!=seqnum;i++);
-  if(i==window->length-1)
-    return -1;
-  window->buffer[i]=NULL;
-  window->size_used--;
-  return 0;
+  for(i=0;window->buffer[i]->seqnum!=seqnum && i<window->length;i++);
+  if(i==window->length)
+    return;
+  if(i==0)
+  {
+    window->buffer[0]->ack=1;
+    window_remove_all(window);
+    return;
+  }
+  window->buffer[i]->ack=1;
 }
 
 int window_is_full(window_t* window)

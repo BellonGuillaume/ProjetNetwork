@@ -25,8 +25,7 @@ int send_data(int sfd, char* filename, int optionf)
 	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
 	pkt_del(pkt); //à enlever
 	*/
-		int n_send = 5;
-		int window_length = pow(2,n_send-1);
+		uint8_t window_length=1;
     int ret=-1;
 		int fd;
 		if(!optionf)
@@ -45,8 +44,8 @@ int send_data(int sfd, char* filename, int optionf)
 		int sseqnum=0;
     char bufsender[512];
     memset(bufsender,0,512);
-		window_t* send_window = window_new(n_send);
-		if(send_window == NULL){
+		window_t* window = window_new(window_length);
+		if(window == NULL){
 			if(close(fd)<0){
 				fprintf(stderr, "Error : the file wasn't closed\n");
 				return EXIT_FAILURE;
@@ -71,18 +70,51 @@ int send_data(int sfd, char* filename, int optionf)
         }
         if (fds[0].revents & POLLIN)
         {
-            int length=read(fd,bufsender,512);
+					if(window_is_full(window))
+					{
+						pkt_t* ack = pkt_new();
+						if(receive_pkt(sfd,ack)!=PKT_OK)
+						{
+							fprintf(stderr,"Error receiving ACK/NACK\n");
+							return -1;
+						}
+						ptypes_t typeAck = pkt_get_type(ack);
+						if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
+						{
+							fprintf(stderr,"Sender received DATA\n");
+							pkt_del(ack);
+						}
+						else if(typeAck==PTYPE_ACK)
+						{
+							window_try_remove(window,pkt_get_seqnum(ack));
+						}
+						else if(typeAck==PTYPE_NACK)
+						{
+							pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
+							if(pkt!=NULL)
+							{
+								send_pkt(sfd,pkt);
+							}
+						}
+					}
+					else
+					{
+						int length=read(fd,bufsender,512);
             if(length==0)
             {
 								if(fd!=0)
-								close(fd);
+								if(close(fd)<0)
+								{
+									fprintf(stderr,"Error : close\n");
+									return -1;
+								}
                 //printf("Fin du programme!\n");
                 return 0;
             }
 						//GERER SEQNUM ET WINDOW DU SR
-						uint8_t seqnum=0;
-						uint8_t window=1;
-						pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window);
+						uint8_t seqnum=sseqnum;
+						sseqnum++;
+						pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
 						if(pkt==NULL)
 						{
 							fprintf(stderr,"Error initialiazing a packet\n");
@@ -91,9 +123,8 @@ int send_data(int sfd, char* filename, int optionf)
 							return -1;
 						}
 						send_pkt(sfd,pkt);
-            pkt_del(pkt);
 						memset(bufsender,0,512);
-						if(window_add(send_window,pkt)<1)
+						if(window_add(window,pkt)<1)
 						{
 							fprintf(stderr, "Error : pkt not added on the window\n");
 							if(close(fd)<0){
@@ -102,20 +133,35 @@ int send_data(int sfd, char* filename, int optionf)
 							}
 							return EXIT_FAILURE;
 						}
-            length=0;
         }
-
-        if (fds[1].revents & POLLIN){ //TODO : double poll
-					pkt_t* pktrec=pkt_new();
-          if(receive_pkt(sfd,pktrec)<0)
+			}
+      if (fds[1].revents & POLLIN) //TODO : double poll
+			{
+				pkt_t* ack = pkt_new();
+				if(receive_pkt(sfd,ack)!=PKT_OK)
+				{
+					fprintf(stderr,"Error receiving ACK/NACK\n");
+					return -1;
+				}
+				ptypes_t typeAck = pkt_get_type(ack);
+				if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
+				{
+					fprintf(stderr,"Sender received DATA\n");
+					pkt_del(ack);
+				}
+				else if(typeAck==PTYPE_ACK)
+				{
+					window_try_remove(window,pkt_get_seqnum(ack));
+				}
+				else if(typeAck==PTYPE_NACK)
+				{
+					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
+					if(pkt!=NULL)
 					{
-						fprintf(stderr,"Error receiving ACK/NACK");
-						if(fd!=0)
-						close(fd);
-						return -1;
+						send_pkt(sfd,pkt);
 					}
-					//PROCESS pktrec
-        }
+				}
+      }
     }
 	if(fd!=0)
 	close(fd);
