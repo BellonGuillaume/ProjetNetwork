@@ -93,6 +93,7 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
 					if(typeAck==PTYPE_DATA)
+					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
 						countTypeDiscard++;
 						pkt_del(ack);
@@ -153,7 +154,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if (fds[1].revents & POLLIN) //TODO : double poll
 			{
-				//printf("présent2\n");
+				printf("présent2\n");
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
@@ -161,6 +162,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
 				if(typeAck==PTYPE_DATA)
+				//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 				{
 					countTypeDiscard++;
 					pkt_del(ack);
@@ -179,7 +181,7 @@ int send_data(int sfd, char* filename, int optionf)
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
-						countData;
+						countData++;
 						send_pkt(sfd,pkt);
 					}
 				}
