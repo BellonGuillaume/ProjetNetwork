@@ -21,6 +21,10 @@ typedef struct window {
   node_t** buffer;
 } window_t;
 
+typedef struct receiving_window {
+  int length;
+  node_t** buffer;
+} rwindow_t;
 
 window_t* window_new(int length)
 {
