@@ -82,11 +82,12 @@ int send_data(int sfd, char* filename, int optionf)
 							return -1;
 						}
 						send_pkt(sfd,pkt);
+            pkt_del(pkt);
 						memset(bufsender,0,512);
             length=0;
         }
 
-        if (fds[1].revents & POLLIN){
+        if (fds[1].revents & POLLIN){ //TODO : double poll
 					pkt_t* pktrec=pkt_new();
           if(receive_pkt(sfd,pktrec)<0)
 					{

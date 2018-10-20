@@ -110,7 +110,7 @@ int window_remove(window_t* window, int seqnum)
   return 0;
 }
 
-
+int window_
 
 /*
 
