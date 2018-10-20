@@ -2,15 +2,15 @@
 
 //Rappel de la structure
 /*struct __attribute__((__packed_)) pkt {
-    uint8_t window:5;
-    uint8_t tr:1;
-    uint8_t type:2;
-    uint8_t seqnum;
-    uint16_t length;
-    uint32_t timestamp;
-    uint32_t crc1;
-    char* payload;
-    uint32_t crc2;
+uint8_t window:5;
+uint8_t tr:1;
+uint8_t type:2;
+uint8_t seqnum;
+uint16_t length;
+uint32_t timestamp;
+uint32_t crc1;
+char* payload;
+uint32_t crc2;
 };*/
 
 int send_data(int sfd, char* filename, int optionf)
@@ -25,118 +25,123 @@ int send_data(int sfd, char* filename, int optionf)
 	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
 	pkt_del(pkt); //à enlever
 	*/
-		uint8_t window_length=4;
-    int ret=-1;
-		int fd;
-		int eof_reached=0;
-		int ack_received=0;
-		if(!optionf)
+	uint8_t window_length=4;
+	int ret=-1;
+	int fd;
+	int eof_reached=0;
+	int ack_received=0;
+	time_t RTT = 4;
+	if(!optionf)
+	{
+		fd=0;
+	}
+	else
+	{
+		fd=open(filename,O_RDONLY);
+		if(fd<0)
 		{
-			fd=0;
+			fprintf(stderr,"Error: file might not exist\n");
+			return -1;
 		}
-		else
-		{
-			fd=open(filename,O_RDONLY);
-			if(fd<0)
-			{
-				fprintf(stderr,"Error: file might not exist\n");
-				return -1;
-			}
-		}
-		int sseqnum=0;
-    char bufsender[512];
-    memset(bufsender,0,512);
-		window_t* window = window_new(window_length);
-		if(window == NULL){
-			if(close(fd)<0){
-				fprintf(stderr, "Error : the file wasn't closed\n");
-				return EXIT_FAILURE;
-			}
+	}
+	int sseqnum=0;
+	char bufsender[512];
+	memset(bufsender,0,512);
+	window_t* window = window_new(window_length);
+	if(window == NULL){
+		if(close(fd)<0){
+			fprintf(stderr, "Error : the file wasn't closed\n");
 			return EXIT_FAILURE;
 		}
-    while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
-    {					//TODO gérer les messages de déconnection
-        struct pollfd fds[2];
+		return EXIT_FAILURE;
+	}
+	while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
+	{					//TODO gérer les messages de déconnection
+		node_t* n_RTT = window_check_RTT(window);
+		if(n_RTT == NULL)
+		{
 
-        fds[0].fd=fd;
-        fds[0].events=POLLIN;
-        fds[1].fd = sfd;
-        fds[1].events = POLLIN;
-        ret = poll(fds, 2, -1 );
-        if (ret<0) {
-            fprintf(stderr,"select error\n");
-            fprintf(stderr,"ERROR: %s\n", strerror(errno));
-						if(fd!=0)
-						close(fd);
-            return -1;
-        }
-        if (fds[0].revents & POLLIN)
-        {
-					if(window_is_full(window))
+			struct pollfd fds[2];
+
+			fds[0].fd=fd;
+			fds[0].events=POLLIN;
+			fds[1].fd = sfd;
+			fds[1].events = POLLIN;
+			ret = poll(fds, 2, -1 );
+			if (ret<0) {
+				fprintf(stderr,"select error\n");
+				fprintf(stderr,"ERROR: %s\n", strerror(errno));
+				if(fd!=0)
+				close(fd);
+				return -1;
+			}
+			if (fds[0].revents & POLLIN)
+			{
+				if(window_is_full(window))
+				{
+					pkt_t* ack = pkt_new();
+					if(receive_pkt(sfd,ack)!=PKT_OK)
 					{
-						pkt_t* ack = pkt_new();
-						if(receive_pkt(sfd,ack)!=PKT_OK)
+						fprintf(stderr,"Error receiving ACK/NACK\n");
+					}
+					ptypes_t typeAck = pkt_get_type(ack);
+					if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
+					{
+						fprintf(stderr,"Sender received DATA\n");
+						pkt_del(ack);
+					}
+					else if(typeAck==PTYPE_ACK)
+					{
+						window_remove(window,pkt_get_seqnum(ack));
+					}
+					else if(typeAck==PTYPE_NACK)
+					{
+						pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
+						if(pkt!=NULL)
 						{
-							fprintf(stderr,"Error receiving ACK/NACK\n");
-						}
-						ptypes_t typeAck = pkt_get_type(ack);
-						if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
-						{
-							fprintf(stderr,"Sender received DATA\n");
-							pkt_del(ack);
-						}
-						else if(typeAck==PTYPE_ACK)
-						{
-							window_remove(window,pkt_get_seqnum(ack));
-						}
-						else if(typeAck==PTYPE_NACK)
-						{
-							pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
-							if(pkt!=NULL)
-							{
-								send_pkt(sfd,pkt);
-							}
+							send_pkt(sfd,pkt);
 						}
 					}
-					else
+				}
+				else
+				{
+					int length=read(fd,bufsender,512);
+					if(length==0)
 					{
-						int length=read(fd,bufsender,512);
-            if(length==0)
-            {
-								if(fd!=0)
-								if(close(fd)<0)
-								{
-									fprintf(stderr,"Error : close\n");
-									return -1;
-								}
-                //printf("Fin du programme!\n");
-                eof_reached=1;
-            }
-						//GERER SEQNUM ET WINDOW DU SR
-						uint8_t seqnum=sseqnum;
-						sseqnum++;
-						pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
-						if(pkt==NULL)
+						if(fd!=0)
+						if(close(fd)<0)
 						{
-							fprintf(stderr,"Error initialiazing a packet\n");
-							if(fd!=0)
-							close(fd);
+							fprintf(stderr,"Error : close\n");
 							return -1;
 						}
-						send_pkt(sfd,pkt);
-						memset(bufsender,0,512);
-						if(window_add(window,pkt)<0)
-						{
-							fprintf(stderr, "Error : pkt not added on the window\n");
-							if(close(fd)<0){
-								fprintf(stderr, "Error : the file wasn't closed\n");
-								return EXIT_FAILURE;
-							}
+						//printf("Fin du programme!\n");
+						eof_reached=1;
+					}
+					//GERER SEQNUM ET WINDOW DU SR
+					uint8_t seqnum=sseqnum;
+					sseqnum++;
+					pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
+					if(pkt==NULL)
+					{
+						fprintf(stderr,"Error initialiazing a packet\n");
+						if(fd!=0)
+						close(fd);
+						return -1;
+					}
+					send_pkt(sfd,pkt);
+					memset(bufsender,0,512);
+					if(window_add(window,pkt)<0)
+					{
+						fprintf(stderr, "Error : pkt not added on the window\n");
+						if(close(fd)<0){
+							fprintf(stderr, "Error : the file wasn't closed\n");
 							return EXIT_FAILURE;
 						}
-        }
+						return EXIT_FAILURE;
+					}
+				}
 			}
-      if (fds[1].revents & POLLIN) //TODO : double poll
+			if (fds[1].revents & POLLIN) //TODO : double poll
 			{
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
@@ -165,18 +170,24 @@ int send_data(int sfd, char* filename, int optionf)
 						send_pkt(sfd,pkt);
 					}
 				}
-      }
+			}
 			if(eof_reached && ack_received)
 			{
 				if(write(sfd,"EOF",sizeof("EOF"))<0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
 					if(fd!=0)
-						close(fd);
+					close(fd);
 					return -1;
 				}
 			}
-    }
+		}
+		else //RTT atteint
+		{
+			send_pkt(sfd,n_RTT->pkt);
+			n_RTT->time = clock();
+		}
+	} //Fin de la boucle while
 	if(fd!=0)
 	close(fd);
 	return 0;
@@ -184,17 +195,17 @@ int send_data(int sfd, char* filename, int optionf)
 
 int main (int argc, char* argv[])
 {
-  int optionf = 0;
-  char first_address[16]="";
-  int port=-1;
-  char filename[255]="";
+	int optionf = 0;
+	char first_address[16]="";
+	int port=-1;
+	char filename[255]="";
 	if(ValidateArgs(argc,argv,&optionf,filename,first_address,&port)!=0)
-  {
-    return EXIT_FAILURE;
-  }
-  printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
-  if(optionf)
-    printf("--- Filename: %s ---\n",filename);
+	{
+		return EXIT_FAILURE;
+	}
+	printf("--- Address: %s ---\n--- Port: %d ---\n",first_address,port);
+	if(optionf)
+	printf("--- Filename: %s ---\n",filename);
 	struct sockaddr_in6 addr;
 	const char *err = real_address(first_address, &addr);
 	if (err!=NULL) {
