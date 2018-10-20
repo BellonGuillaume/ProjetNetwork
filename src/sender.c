@@ -142,9 +142,9 @@ int send_data(int sfd, char* filename, int optionf)
 					fprintf(stderr,"Error receiving ACK/NACK\n");
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
-				if(typeAck!=PTYPE_ACK || typeAck != PTYPE_NACK)
+				if(typeAck!=PTYPE_ACK && typeAck != PTYPE_NACK)
 				{
-					fprintf(stderr,"Sender received DATA\n");
+					fprintf(stderr,"Error : Sender received DATA\n");
 					pkt_del(ack);
 				}
 				else if(typeAck==PTYPE_ACK)

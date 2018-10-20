@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <ctype.h>
 
+#define WINDOW_LENGTH 4
 
 /* Read and processes the arguments argv, assigns it to the arguments given in
  * the fuction. They are left untouched if argv doesnt respect the right format.
@@ -56,4 +57,11 @@ int ValidateArgs(int argc, char* argv[],int* optionf,char* filename,char* first_
   memcpy(first_address,argv[argc-2],strlen(argv[argc-2]));
 	*port = atoi(argv[argc-1]);
   return 0;
+}
+
+int seqnum_in_window(uint8_t sseqnum, uint8_t window_length, uint8_t pkt_seqnum)
+{
+	if(pkt_seqnum<sseqnum || pkt_seqnum>=(sseqnum+window_length))
+		return 0;
+	return 1;
 }

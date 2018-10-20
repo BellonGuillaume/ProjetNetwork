@@ -197,7 +197,7 @@ int receive_buf(int sfd, char* buf, int* len)
 /*
  * Read paquets from the socket.
  * @PRE: pkt is not malloced (created) yet.
- * @RETURN : 0 if paquet received correctily, -1 if error and 1 if EOF reached.
+ * @RETURN : 0 if paquet received correctily, -1 if error, 2 if packet is truncated and 1 if EOF reached.
  */
 int receive_pkt(int sfd, pkt_t* pkt)
 {
@@ -216,8 +216,14 @@ int receive_pkt(int sfd, pkt_t* pkt)
     return 1;
   }
   //printf("about to decode\n");
-  if(pkt_decode(buf,len,pkt)!=PKT_OK)
+  pkt_status_code err = pkt_decode(buf,len,pkt);
+  if(err!=PKT_OK)
   {
+    if(err==E_TR)
+    {
+      fprintf(stderr,"Packet truncated\n");
+      return 2;
+    }
     fprintf(stderr,"Error decoding\n");
     return -1;
   }

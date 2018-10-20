@@ -1,18 +1,55 @@
 #include "receiver.h"
 
+//TODO: Checker que les seqnum et autres uint8_t ne sont pas écrits en int
+
+int send_ack(int sfd, int seqnum)
+{
+  ptypes_t type=PTYPE_ACK;
+  pkt_t* ack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH); //TODO :mettre le tr à 1?
+  if(ack==NULL)
+  return -1;
+  int err;
+  err=pkt_set_type(ack,type);
+  err=err & send_pkt(sfd,ack);
+  pkt_del(ack);
+  return err;
+}
+
+int send_nack(int sfd, int seqnum)
+{
+  ptypes_t type=PTYPE_NACK;
+  pkt_t* ack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH); //TODO :mettre le tr à 1?
+  if(ack==NULL)
+  return -1;
+  int err;
+  err=pkt_set_type(ack,type);
+  err=err & send_pkt(sfd,ack);
+  pkt_del(ack);
+  return err;
+}
+
+int process_data(int fd, pkt_t* pkt)
+{
+  int length=write(fd,pkt_get_payload(pkt),pkt_get_length(pkt));
+  pkt_del(pkt);
+  if(length==0)
+  {
+    //Fin du programme
+    if(fd!=1)
+      close(fd);
+    return 0;
+  }
+}
+
 int receive_data(int sfd, char* filename, int optionf)
 {
-  /*TEST
-  pkt_t* pkt=pkt_new();
-  int err=receive_pkt(sfd,pkt);
-  char msg[pkt_get_length(pkt)];
-  if(pkt_get_payload(pkt)==NULL)
-    return -1;
-  memcpy(msg,pkt_get_payload(pkt),pkt_get_length(pkt));
-  //printf("about to printf\n");
-  printf("\n[RECEIVED] : %s\n\n",msg);
-  pkt_del(pkt);*/
-
+    int sseqnum=0;
+    pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));
+    if(buffer==NULL)
+    {
+      fprintf(stderr, "Error : calloc fail\n");
+      return -1;
+    }
     int ret=-1;
     int fd;
     if(!optionf)
@@ -33,26 +70,140 @@ int receive_data(int sfd, char* filename, int optionf)
     int acks=0; //TODO :à remplacer par le selective repeat -> correspond à s'il faut renvoyer un ack
     while(1)
     {
-      if(acks)
+      for(int i=0;i<WINDOW_LENGTH;i++)
       {
-        uint8_t seqnum=0;
-        uint8_t window=0;
-        uint8_t type=1;
-        pkt_t* ack = pkt_initialize(NULL,0,seqnum,window); //TODO :mettre le tr à 1?
-        pkt_set_type(ack,type);
-        send_pkt(sfd,ack);
-        pkt_del(ack);
+        if(buffer[i]!=NULL)
+        {
+          if(pkt_get_seqnum(buffer[i])==sseqnum)
+          {
+            if(process_data(fd,buffer[i])!=0)
+            {
+              fprintf(stderr,"Error : process data\n");
+              return -1;
+            }
+            if(send_ack(sfd,sseqnum)==-1)
+            {
+              fprintf(stderr,"Error : sending ack\n");
+              return -1;
+            }
+            sseqnum++;
+          }
+        }
       }
+
       pkt_t* pkt=pkt_new();
-      receive_pkt(sfd,pkt); //TODO : check crc ou tr
-      int length=write(fd,pkt_get_payload(pkt),pkt_get_length(pkt));
-      if(length==0)
+      int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
+      if(err==2)
       {
-        //Fin du programme
-        if(fd!=1)
-          close(fd);
+        uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
+        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))
+        {
+          if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)
+          {
+            fprintf(stderr,"Error : sending nack\n");
+            return -1;
+          }
+        }
+        else
+        {
+          pkt_del(pkt);
+        }
+      }
+      else if(err==1)
+      {
+        printf("Fin du receiver\n");
         return 0;
       }
+      else if(err==0)
+      {
+        uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
+        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))
+        {
+          if(sseqnum==pkt_seqnum)
+          {
+            for(int i=0;i<WINDOW_LENGTH;i++)
+            {
+              if(buffer[i]!=NULL)
+              {
+                if(pkt_get_seqnum(buffer[i])==sseqnum)
+                {
+                  pkt_del(buffer[i]);
+                }
+              }
+            }
+            if(send_ack(sfd,sseqnum)!=0)
+            {
+              fprintf(stderr,"Error : sending ack\n");
+              return -1;
+            }
+            sseqnum++;
+            if(process_data(fd,pkt)!=0)
+            {
+              fprintf(stderr,"Error : processing data\n");
+              return -1;
+            }
+          }
+          else
+          {
+            int boolean=0;
+            for(int i=0;i<WINDOW_LENGTH;i++)
+            {
+              if(buffer[i]!=NULL)
+              {
+                if(pkt_get_seqnum(buffer[i])==pkt_seqnum)
+                {
+                  boolean=1;
+                }
+              }
+            }
+            if(boolean)
+            {
+              pkt_del(pkt);
+              if(send_ack(sfd,sseqnum-1)!=0)
+              {
+                fprintf(stderr,"Error : sending ack\n");
+                return -1;
+              }
+            }
+            else
+            {
+              int added=0;
+              for(int i=0;i<WINDOW_LENGTH;i++)
+              {
+                if(buffer[i]==NULL)
+                {
+                  buffer[i]=pkt;
+                  i=WINDOW_LENGTH;
+                  added=1;
+                }
+              }
+              if(!added)
+              {
+                pkt_del(pkt);
+                fprintf(stderr,"Error : no space on buffer - pkt discarded\n");
+              }
+              else
+              {
+                if(send_ack(sfd,pkt_seqnum-1)!=0)
+                {
+                  fprintf(stderr,"Error : sending ack\n");
+                  return -1;
+                }
+              }
+            }
+          }
+        }
+        else //not in window TODO: renvoyer ack? ou pas?
+        {
+          if(send_ack(sfd,sseqnum-1)!=0)
+          {
+            fprintf(stderr,"Error : sending ack\n");
+            return -1;
+          }
+          pkt_del(pkt);
+        }
+      }
+      //end of loop
     }
 }
 
