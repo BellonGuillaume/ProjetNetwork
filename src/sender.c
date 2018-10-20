@@ -1,5 +1,4 @@
 #include "sender.h"
-#include <math.h>
 
 //Rappel de la structure
 /*struct __attribute__((__packed_)) pkt {
@@ -27,7 +26,7 @@ int send_data(int sfd, char* filename, int optionf)
 	pkt_del(pkt); //à enlever
 	*/
 		int n_send = 5;
-		int window_length = pow(2,n-1);
+		int window_length = pow(2,n_send-1);
     int ret=-1;
 		int fd;
 		if(!optionf)

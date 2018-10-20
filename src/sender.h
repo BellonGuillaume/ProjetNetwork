@@ -17,5 +17,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <math.h>
+#include "window.c"
 
 int send_data(int sfd, char* filename, int optionf);
