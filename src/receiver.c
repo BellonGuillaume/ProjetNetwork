@@ -68,6 +68,7 @@ int receive_data(int sfd, char* filename, int optionf)
       fd=open(filename,O_WRONLY|O_CREAT,S_IRWXU|S_IRWXO);
       if(fd<0)
       {
+        free(buffer);
         fprintf(stderr,"Error: file might not exist\n");
 				return -1;
       }
@@ -86,11 +87,23 @@ int receive_data(int sfd, char* filename, int optionf)
             if(process_data(fd,buffer[i])!=0)
             {
               fprintf(stderr,"Error : process data\n");
+              free(buffer)
+              if(close(fd)<0)
+              {
+                fprintf(stderr,"Error : the file wasn't close\n");
+                return -1;
+              }
               return -1;
             }
             if(send_ack(sfd,sseqnum)==-1)
             {
               fprintf(stderr,"Error : sending ack\n");
+              free(buffer);
+              if(close(fd)<0)
+              {
+                fprintf(stderr,"Error : the file wasn't close\n");
+                return -1;
+              }
               return -1;
             }
             sseqnum++;
