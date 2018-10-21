@@ -70,7 +70,7 @@ int send_data(int sfd, char* filename, int optionf)
 				{
 					if(close(fd)<0)
 					{
-						fprintf(stder,"Error : the file wasn't closed\n");
+						fprintf(stderr,"Error : the file wasn't closed\n");
 						window_del(window);
 						return -1;
 					}
