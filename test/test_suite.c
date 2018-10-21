@@ -38,8 +38,6 @@ void test()
 	if(fd<0)
 	{
 		err=1;
-		fprintf(stderr,"\n Do not forget to make ../\n\n");
-		return;
 	}
 	for(int j=0;j<n;j++)
 	{
@@ -61,14 +59,9 @@ void test()
 
 int main (int argc, char* argv[])
 {
-	if(argc==2)
+	if(argc>1)
 	{
 		n=atoi(argv[1]);
-	}
-	else
-	{
-		fprintf(stderr,"\nUsage :\n\n	./test1 size\n	- size being the number of times the sequence 0123456789 will be sent\n\n");
-		return -1;
 	}
 	printf("Test envoi de %d kb.\n",n/100);
 	CU_initialize_registry();
