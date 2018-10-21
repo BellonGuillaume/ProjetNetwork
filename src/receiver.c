@@ -66,7 +66,8 @@ int receive_data(int sfd, char* filename, int optionf)
     }
     else
     {
-      fd=open(filename,O_WRONLY|O_CREAT,S_IRWXU|S_IRWXO);
+      //TODO: ENLEVER O_TRUNC
+      fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);
       if(fd<0)
       {
         free(buffer);
@@ -108,6 +109,8 @@ int receive_data(int sfd, char* filename, int optionf)
               return -1;
             }
             sseqnum++;
+            if(sseqnum>255)
+            sseqnum=0;
           }
         }
       }
@@ -163,6 +166,8 @@ int receive_data(int sfd, char* filename, int optionf)
               return -1;
             }
             sseqnum++;
+            if(sseqnum>255)
+            sseqnum=0;
             if(process_data(fd,pkt)!=0)
             {
               fprintf(stderr,"Error : processing data\n");
@@ -186,7 +191,10 @@ int receive_data(int sfd, char* filename, int optionf)
             if(boolean)
             {
               pkt_del(pkt);
-              if(send_ack(sfd,sseqnum-1)!=0)
+              uint8_t seqnumtosend=sseqnum;
+              if(sseqnum==0)
+              seqnumtosend=255;
+              if(send_ack(sfd,seqnumtosend)!=0)
               {
                 fprintf(stderr,"Error : sending ack\n");
 
@@ -212,7 +220,10 @@ int receive_data(int sfd, char* filename, int optionf)
               }
               else
               {
-                if(send_ack(sfd,pkt_seqnum-1)!=0)
+                uint8_t seqnumtosend=sseqnum;
+                if(sseqnum==0)
+                seqnumtosend=255;
+                if(send_ack(sfd,seqnumtosend)!=0)
                 {
                   fprintf(stderr,"Error : sending ack\n");
 
@@ -224,7 +235,10 @@ int receive_data(int sfd, char* filename, int optionf)
         }
         else //not in window TODO: renvoyer ack? ou pas?
         {
-          if(send_ack(sfd,sseqnum-1)!=0)
+          uint8_t seqnumtosend=sseqnum;
+          if(sseqnum==0)
+          seqnumtosend=255;
+          if(send_ack(sfd,seqnumtosend)!=0)
           {
             fprintf(stderr,"Error : sending ack\n");
 
