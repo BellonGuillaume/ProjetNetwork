@@ -13,8 +13,9 @@ int send_ack(int sfd, int seqnum)
   return -1;
   int err;
   err=pkt_set_type(ack,type);
-  err=err && send_pkt(sfd,ack);
-  printf("ack\n");
+  int err2 = send_pkt(sfd,ack);
+  err=err || err2;
+  //printf("ack\n");
   countAck++;
   pkt_del(ack);
   return err;
