@@ -126,7 +126,7 @@ int receive_data(int sfd, char* filename, int optionf)
           if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)
           {
             fprintf(stderr,"Error : sending nack\n");
-
+            pkt_del(pkt);
             return -1;
           }
           pkt_del(pkt);
@@ -138,6 +138,7 @@ int receive_data(int sfd, char* filename, int optionf)
       }
       else if(err==1)
       {
+        pkt_del(pkt);
         //printf("Fin du receiver\n");
         free(buffer);
         return 0;

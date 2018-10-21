@@ -95,7 +95,6 @@ int send_data(int sfd, char* filename, int optionf)
 					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
 						countTypeDiscard++;
-						pkt_del(ack);
 					}
 					else if(typeAck==PTYPE_ACK)
 					{
@@ -115,6 +114,7 @@ int send_data(int sfd, char* filename, int optionf)
 							}
 						}
 					}
+					pkt_del(ack);
 				}
 				else
 				{
@@ -174,7 +174,6 @@ int send_data(int sfd, char* filename, int optionf)
 				//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 				{
 					countTypeDiscard++;
-					pkt_del(ack);
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
@@ -198,6 +197,7 @@ int send_data(int sfd, char* filename, int optionf)
 						}
 					}
 				}
+				pkt_del(ack);
 			}
 			if(eof_reached && ack_received)
 			{
