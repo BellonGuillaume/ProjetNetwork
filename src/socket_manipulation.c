@@ -174,7 +174,7 @@ int receive_buf(int sfd, char* buf, int* len)
 
         if (fds[0].revents & POLLIN)
         {
-          //printf("about to read\n");
+          printf("SOCKET INPUT\n");
             int length=read(sfd, buf, 1024);
             //printf("length read: %d\n",length);
             /*if(length<0)//?

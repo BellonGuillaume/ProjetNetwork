@@ -17,16 +17,6 @@ int countData=0;
 
 int send_data(int sfd, char* filename, int optionf)
 {
-	/* TEST
-	pkt_t* pkt=pkt_new();
-	pkt_set_type(pkt,1);
-	pkt_set_seqnum(pkt,0);
-	pkt_set_payload(pkt,"Hello world",sizeof("Hello world"));
-	pkt_set_length(pkt,sizeof("Hello world"));
-	send_pkt(sfd,pkt);
-	printf("\n[SENT] : %s\n\n", pkt_get_payload(pkt));
-	pkt_del(pkt); //à enlever
-	*/
 	uint8_t window_length=4;
 	int ret=-1;
 	int fd;
@@ -83,7 +73,7 @@ int send_data(int sfd, char* filename, int optionf)
 			//printf("passé\n");
 			if (fds[0].revents & POLLIN)
 			{
-				//printf("présent1\n");
+				printf("STDIN INPUT\n");
 				if(window_is_full(window))
 				{
 					pkt_t* ack = pkt_new();
@@ -92,6 +82,7 @@ int send_data(int sfd, char* filename, int optionf)
 						fprintf(stderr,"Error receiving ACK/NACK\n");
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
+					printf("type : %d\n",pkt_get_type(ack));
 					if(typeAck==PTYPE_DATA)
 					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
@@ -100,7 +91,7 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 					else if(typeAck==PTYPE_ACK)
 					{
-						//printf("Ack recu\n");
+						printf("Ack recu\n");
 						window_remove(window,pkt_get_seqnum(ack));
 					}
 					else if(typeAck==PTYPE_NACK)
@@ -109,7 +100,11 @@ int send_data(int sfd, char* filename, int optionf)
 						if(pkt!=NULL)
 						{
 							countData++;
-							send_pkt(sfd,pkt);
+							if(send_pkt(sfd,pkt)!=0)
+							{
+								fprintf(stderr,"Error : sending pkt\n");
+								return -1;
+							}
 						}
 					}
 				}
@@ -124,7 +119,7 @@ int send_data(int sfd, char* filename, int optionf)
 							fprintf(stderr,"Error : close\n");
 							return -1;
 						}
-						//printf("Fin du programme!\n");
+						printf("Fin du programme!\n");
 						eof_reached=1;
 					}
 					//GERER SEQNUM ET WINDOW DU SR
@@ -139,7 +134,11 @@ int send_data(int sfd, char* filename, int optionf)
 						return -1;
 					}
 					countData++;
-					send_pkt(sfd,pkt);
+					if(send_pkt(sfd,pkt)!=0)
+					{
+						fprintf(stderr,"Error : sending pkt\n");
+						return -1;
+					}
 					memset(bufsender,0,512);
 					if(window_add(window,pkt)<0)
 					{
@@ -154,7 +153,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if (fds[1].revents & POLLIN) //TODO : double poll
 			{
-				printf("présent2\n");
+				//printf("présent2\n");
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
@@ -182,7 +181,11 @@ int send_data(int sfd, char* filename, int optionf)
 					if(pkt!=NULL)
 					{
 						countData++;
-						send_pkt(sfd,pkt);
+						if(send_pkt(sfd,pkt)!=0)
+						{
+							fprintf(stderr,"Error : sending pkt\n");
+							return -1;
+						}
 					}
 				}
 			}
@@ -200,7 +203,12 @@ int send_data(int sfd, char* filename, int optionf)
 		else //RTT atteint
 		{
 			//printf("Resending pkt\n");
-			send_pkt(sfd,n_RTT->pkt);
+			if(send_pkt(sfd,n_RTT->pkt)!=0)
+			{
+				fprintf(stderr,"Error : sending pkt\n");
+				return -1;
+			}
+			printf("RTT expired\n");
 			countData++;
 			n_RTT->time = clock();
 		}
