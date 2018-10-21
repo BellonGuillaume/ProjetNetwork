@@ -36,7 +36,7 @@ int send_data(int sfd, char* filename, int optionf)
 			return -1;
 		}
 	}
-	int sseqnum=0;
+	uint8_t sseqnum=0;
 	char bufsender[512];
 	memset(bufsender,0,512);
 	window_t* window = window_new(window_length);
@@ -67,7 +67,6 @@ int send_data(int sfd, char* filename, int optionf)
 				fprintf(stderr,"select error\n");
 				fprintf(stderr,"ERROR: %s\n", strerror(errno));
 				if(fd!=0)
-<<<<<<< HEAD
 				{
 					if(close(fd)<0)
 					{
@@ -77,9 +76,6 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 				}
 				window_del(window);
-=======
-				close(fd);
->>>>>>> parent of 767bd5e... Fuite de mémoire receiver et 256 -> 1
 				return -1;
 			}
 			//printf("passé\n");
@@ -137,6 +133,8 @@ int send_data(int sfd, char* filename, int optionf)
 					//GERER SEQNUM ET WINDOW DU SR
 					uint8_t seqnum=sseqnum;
 					sseqnum++;
+					if(sseqnum>255)
+					sseqnum=0;
 					pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
 					if(pkt==NULL)
 					{
