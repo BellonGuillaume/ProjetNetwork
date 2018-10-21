@@ -88,7 +88,7 @@ int receive_data(int sfd, char* filename, int optionf)
             if(process_data(fd,buffer[i])!=0)
             {
               fprintf(stderr,"Error : process data\n");
-              free(buffer)
+              free(buffer);
               if(close(fd)<0)
               {
                 fprintf(stderr,"Error : the file wasn't close\n");
