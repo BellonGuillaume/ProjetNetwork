@@ -158,6 +158,8 @@ int send_data(int sfd, char* filename, int optionf)
 					if(window_add(window,pkt)<0)
 					{
 						fprintf(stderr, "Error : pkt not added on the window\n");
+						window_del(window);
+						pkt_del(pkt);
 						if(close(fd)<0){
 							fprintf(stderr, "Error : the file wasn't closed\n");
 							return EXIT_FAILURE;
