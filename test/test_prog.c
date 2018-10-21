@@ -12,7 +12,7 @@
 int n=1;
 void test()
 {
-	int fd=open("test.txt",O_CREAT|O_WRONLY,S_IRWXU|S_IRWXO);
+	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
 	for(int j=0;j<n;j++)
 	{
 		for(int i=0;i<10;i++)
@@ -25,15 +25,20 @@ void test()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("../receiver -f out.txt localhost 1341");
+		system("rm out.txt");
+		system("../receiver -f out.txt localhost 6565");
 		exit(0);
 	}
 	sleep(1);
-	system("../sender -f test.txt localhost 1341");
+	system("../sender -f test.txt localhost 6565");
 	close(pid);
 	close(fd);
 	fd= open("out.txt",O_RDONLY);
 	int err=0;
+	if(fd<0)
+	{
+		err=1;
+	}
 	for(int j=0;j<n;j++)
 	{
 		for(int i=0;i<10;i++)
