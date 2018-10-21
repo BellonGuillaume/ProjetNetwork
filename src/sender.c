@@ -36,7 +36,7 @@ int send_data(int sfd, char* filename, int optionf)
 			return -1;
 		}
 	}
-	int sseqnum=0;
+	uint8_t sseqnum=0;
 	char bufsender[512];
 	memset(bufsender,0,512);
 	window_t* window = window_new(window_length);
@@ -67,7 +67,15 @@ int send_data(int sfd, char* filename, int optionf)
 				fprintf(stderr,"select error\n");
 				fprintf(stderr,"ERROR: %s\n", strerror(errno));
 				if(fd!=0)
-				close(fd);
+				{
+					if(close(fd)<0)
+					{
+						fprintf(stder,"Error : the file wasn't closed\n");
+						window_del(window);
+						return -1;
+					}
+				}
+				window_del(window);
 				return -1;
 			}
 			//printf("passé\n");
@@ -79,7 +87,7 @@ int send_data(int sfd, char* filename, int optionf)
 					pkt_t* ack = pkt_new();
 					if(receive_pkt(sfd,ack)!=PKT_OK)
 					{
-						fprintf(stderr,"Error receiving ACK/NACK\n");
+						fprintf(stderr,"Error receiving ACK/NACK\n");//TODO
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
 					//printf("type : %d\n",pkt_get_type(ack));
@@ -87,7 +95,6 @@ int send_data(int sfd, char* filename, int optionf)
 					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
 						countTypeDiscard++;
-						pkt_del(ack);
 					}
 					else if(typeAck==PTYPE_ACK)
 					{
@@ -103,10 +110,14 @@ int send_data(int sfd, char* filename, int optionf)
 							if(send_pkt(sfd,pkt)!=0)
 							{
 								fprintf(stderr,"Error : sending pkt\n");
+								pkt_del(pkt);
+								pkt_del(ack);
+								window_del(window);
 								return -1;
 							}
 						}
 					}
+					pkt_del(ack);
 				}
 				else
 				{
@@ -117,6 +128,7 @@ int send_data(int sfd, char* filename, int optionf)
 						if(close(fd)<0)
 						{
 							fprintf(stderr,"Error : close\n");
+							window_del(window);
 							return -1;
 						}
 						//printf("Fin du programme!\n");
@@ -125,30 +137,54 @@ int send_data(int sfd, char* filename, int optionf)
 					//GERER SEQNUM ET WINDOW DU SR
 					uint8_t seqnum=sseqnum;
 					sseqnum++;
+					if(sseqnum>255)
+					{
+						sseqnum = 0;
+					}
 					pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
 					if(pkt==NULL)
 					{
 						fprintf(stderr,"Error initialiazing a packet\n");
-						if(fd!=0)
-						close(fd);
+						if(close(fd)<0)
+						{
+							fprintf(stderr,"Error : close\n");
+							window_del(window);
+							return -1;
+						}
+						window_del(window);
 						return -1;
 					}
 					countData++;
 					if(send_pkt(sfd,pkt)!=0)
 					{
 						fprintf(stderr,"Error : sending pkt\n");
+						if(close(fd)<0)
+						{
+							fprintf(stderr,"Error : close\n");
+							pkt_del(pkt);
+							window_del(window);
+							return -1;
+						}
+						pkt_del(pkt);
+						window_del(window);
 						return -1;
 					}
 					memset(bufsender,0,512);
 					if(window_add(window,pkt)<0)
 					{
 						fprintf(stderr, "Error : pkt not added on the window\n");
-						if(close(fd)<0){
-							fprintf(stderr, "Error : the file wasn't closed\n");
-							return EXIT_FAILURE;
+						if(close(fd)<0)
+						{
+							fprintf(stderr,"Error : close\n");
+							pkt_del(pkt);
+							window_del(window);
+							return -1;
 						}
-						return EXIT_FAILURE;
+						pkt_del(pkt);
+						window_del(window);
+						return -1;
 					}
+					pkt_del(pkt);
 				}
 			}
 			if (fds[1].revents & POLLIN) //TODO : double poll
@@ -157,14 +193,13 @@ int send_data(int sfd, char* filename, int optionf)
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
-					fprintf(stderr,"Error receiving ACK/NACK\n");
+					fprintf(stderr,"Error receiving ACK/NACK\n");//TODO pkt_del(ack);
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
 				if(typeAck==PTYPE_DATA)
 				//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 				{
 					countTypeDiscard++;
-					pkt_del(ack);
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
@@ -184,18 +219,35 @@ int send_data(int sfd, char* filename, int optionf)
 						if(send_pkt(sfd,pkt)!=0)
 						{
 							fprintf(stderr,"Error : sending pkt\n");
+							if(close(fd)<0)
+							{
+								fprintf(stderr,"Error : close\n");
+								pkt_del(pkt);
+								pkt_del(ack);
+								window_del(window);
+								return -1;
+							}
+							pkt_del(pkt);
+							pkt_del(ack);
+							window_del(window);
 							return -1;
 						}
 					}
 				}
+				pkt_del(ack);
 			}
 			if(eof_reached && ack_received)
 			{
 				if(write(sfd,"EOF",sizeof("EOF"))<0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
-					if(fd!=0)
-					close(fd);
+					if(close(fd)<0)
+					{
+						fprintf(stderr,"Error : close\n");
+						window_del(window);
+						return -1;
+					}
+					window_del(window);
 					return -1;
 				}
 			}
@@ -206,6 +258,13 @@ int send_data(int sfd, char* filename, int optionf)
 			if(send_pkt(sfd,n_RTT->pkt)!=0)
 			{
 				fprintf(stderr,"Error : sending pkt\n");
+				if(close(fd)<0)
+				{
+					fprintf(stderr,"Error : close\n");
+					window_del(window);
+					return -1;
+				}
+				window_del(window);
 				return -1;
 			}
 			countData++;
@@ -215,7 +274,14 @@ int send_data(int sfd, char* filename, int optionf)
 	} //Fin de la boucle while
 	window_del(window);
 	if(fd!=0)
-	close(fd);
+	{
+		if(close(fd)<0)
+		{
+			fprintf(stderr,"Error : close\n");
+			return -1;
+		}
+		return -1;
+	}
 	if(countTypeDiscard!=0)
 	{
 		fprintf(stderr,"PTYPE_DATA pkt discarded by sender : %d \n",countTypeDiscard);
