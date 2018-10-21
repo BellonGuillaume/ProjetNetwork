@@ -10,7 +10,7 @@
 #include <CUnit/Basic.h>
 
 int n=1;
-void test()
+void test_prog()
 {
 	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
 	for(int j=0;j<n;j++)
@@ -72,8 +72,8 @@ int main (int argc, char* argv[])
 	}
 	printf("Test envoi de %d kb.\n",n/100);
 	CU_initialize_registry();
-  CU_pSuite suite = CU_add_suite("test", 0, 0);
-  CU_add_test(suite, "test", test);
+  CU_pSuite suite = CU_add_suite("test_prog", 0, 0);
+  CU_add_test(suite, "test1", test_prog);
   CU_basic_set_mode(CU_BRM_VERBOSE);
   CU_basic_run_tests();
 	CU_cleanup_registry();
