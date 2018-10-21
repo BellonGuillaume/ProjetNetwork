@@ -1,0 +1,22 @@
+all : test1 test2
+
+test1: test_prog.o
+	gcc -o test1 test_prog.o -lcunit
+
+packet.o: ../src/packet.c
+	gcc -o ../src/packet.o ../src/packet.c -lz
+
+window.o: ../src/window.c
+	gcc -o ../src/window.o ../src/window.c
+
+test_suite.o: test_suite.c
+	gcc -o test_suite.o test_suite.c -lcunit
+
+test_prog.o: test_prog.c
+	gcc -c test_prog.c -lcunit
+
+test2: test_suite.o
+	gcc -o test2 test_suite.o ../src/packet.o ../src/window.o -lcunit
+
+clean: 
+	rm test_prog.o test1 test.txt out.txt
