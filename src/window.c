@@ -58,7 +58,7 @@ void node_del(node_t* node)
   {
     if(node->pkt!=NULL)
     {
-      free(node->pkt);
+      pkt_del(node->pkt);
       node->pkt=NULL;
     }
     free(node);
