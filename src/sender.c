@@ -73,7 +73,7 @@ int send_data(int sfd, char* filename, int optionf)
 			//printf("passé\n");
 			if (fds[0].revents & POLLIN)
 			{
-				printf("STDIN INPUT\n");
+				//printf("STDIN INPUT\n");
 				if(window_is_full(window))
 				{
 					pkt_t* ack = pkt_new();
@@ -82,7 +82,7 @@ int send_data(int sfd, char* filename, int optionf)
 						fprintf(stderr,"Error receiving ACK/NACK\n");
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
-					printf("type : %d\n",pkt_get_type(ack));
+					//printf("type : %d\n",pkt_get_type(ack));
 					if(typeAck==PTYPE_DATA)
 					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
@@ -91,7 +91,7 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 					else if(typeAck==PTYPE_ACK)
 					{
-						printf("Ack recu\n");
+						//printf("Ack recu\n");
 						window_remove(window,pkt_get_seqnum(ack));
 					}
 					else if(typeAck==PTYPE_NACK)
@@ -119,7 +119,7 @@ int send_data(int sfd, char* filename, int optionf)
 							fprintf(stderr,"Error : close\n");
 							return -1;
 						}
-						printf("Fin du programme!\n");
+						//printf("Fin du programme!\n");
 						eof_reached=1;
 					}
 					//GERER SEQNUM ET WINDOW DU SR
@@ -168,7 +168,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
-					printf("Ack recu\n");
+					//printf("Ack recu\n");
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
@@ -208,7 +208,6 @@ int send_data(int sfd, char* filename, int optionf)
 				fprintf(stderr,"Error : sending pkt\n");
 				return -1;
 			}
-			printf("RTT expired\n");
 			countData++;
 			n_RTT->time = clock();
 		}

@@ -125,10 +125,12 @@ return 0;
 
 int send_buf(int sfd, char* buf, size_t len)
 {
+  //printf("sendbuf\n");
   int length;
   for(int totalLength=0;totalLength<len;totalLength+=length)
   {
     length=write(sfd,buf,len);
+    //printf("write\n");
     if(length<0)
     {
       fprintf(stderr,"Error writing on the socket\n");
@@ -140,6 +142,7 @@ int send_buf(int sfd, char* buf, size_t len)
 
 int send_pkt(int sfd, pkt_t* pkt)
 {
+  //printf("send pkt\n");
   char temp[1024];
   size_t length=1024;
   if(pkt_encode(pkt,temp,&length)!=PKT_OK)
@@ -147,6 +150,7 @@ int send_pkt(int sfd, pkt_t* pkt)
     fprintf(stderr,"Encoding error\n");
     return EXIT_FAILURE;
   }
+  //printf("encoding ok\n");
   char buf[length];
   memcpy(buf,temp,length);
   return send_buf(sfd,buf,(size_t) length);
@@ -154,6 +158,7 @@ int send_pkt(int sfd, pkt_t* pkt)
 
 int receive_buf(int sfd, char* buf, int* len)
 {
+  //printf("Waiting for receive\n");
     int ret=-1;
     *len=0;
     while(1)
@@ -174,7 +179,7 @@ int receive_buf(int sfd, char* buf, int* len)
 
         if (fds[0].revents & POLLIN)
         {
-          printf("SOCKET INPUT\n");
+          //printf("SOCKET INPUT\n");
             int length=read(sfd, buf, 1024);
             //printf("length read: %d\n",length);
             /*if(length<0)//?
