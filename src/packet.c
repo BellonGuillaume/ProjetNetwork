@@ -292,15 +292,15 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
                                 const uint16_t length)
 {
 
-    if(length>MAX_PAYLOAD_SIZE)
-    {
-        return E_NOMEM;
-    }
     if(pkt->payload!=NULL)
     {
         free(pkt->payload);
         pkt->payload=NULL;
         pkt->length=0;
+    }
+    if(length>MAX_PAYLOAD_SIZE)
+    {
+        return E_NOMEM;
     }
     if((data==NULL)||(length == 0))
     {

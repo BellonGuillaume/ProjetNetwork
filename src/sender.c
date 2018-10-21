@@ -141,12 +141,17 @@ int send_data(int sfd, char* filename, int optionf)
 						fprintf(stderr,"Error initialiazing a packet\n");
 						if(fd!=0)
 						close(fd);
+						window_del(window);
 						return -1;
 					}
 					countData++;
 					if(send_pkt(sfd,pkt)!=0)
 					{
 						fprintf(stderr,"Error : sending pkt\n");
+						if(fd!=0)
+						close(fd);
+						pkt_del(pkt);
+						window_del(window);
 						return -1;
 					}
 					memset(bufsender,0,512);
