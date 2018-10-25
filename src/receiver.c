@@ -1,6 +1,7 @@
 #include "receiver.h"
 
-//TODO: Checker que les seqnum et autres uint8_t ne sont pas écrits en int
+//TODO: utiliser le timestamp pour signaler la fin du programme. Le mettre à 1 et vérifier dans le receiver si timestamp > 0
+// modifier le sender pour qu'en cas d'EOF, il envoie un paquet avec le timestamp à 1 au lieu de simplement EOF.
 
 int countNack=0;
 int countAck=0;
@@ -51,6 +52,7 @@ int process_data(int fd, pkt_t* pkt)
 
 int receive_data(int sfd, char* filename, int optionf)
 {
+  int first_received=0;
     int sseqnum=0;
     pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));
     if(buffer==NULL)
@@ -92,10 +94,10 @@ int receive_data(int sfd, char* filename, int optionf)
               free(buffer);
               if(close(fd)<0)
               {
-                fprintf(stderr,"Error : the file wasn't close\n");
+                fprintf(stderr,"Error : the file wasn't closed\n");
                 return -1;
               }
-              return -1;
+              //return -1;
             }
             if(send_ack(sfd,sseqnum)==-1)
             {
@@ -103,10 +105,10 @@ int receive_data(int sfd, char* filename, int optionf)
               free(buffer);
               if(close(fd)<0)
               {
-                fprintf(stderr,"Error : the file wasn't close\n");
+                fprintf(stderr,"Error : the file wasn't closed\n");
                 return -1;
               }
-              return -1;
+              //return -1;
             }
             sseqnum++;
             if(sseqnum>255)
@@ -127,7 +129,7 @@ int receive_data(int sfd, char* filename, int optionf)
           {
             fprintf(stderr,"Error : sending nack\n");
             pkt_del(pkt);
-            return -1;
+            //return -1;
           }
           pkt_del(pkt);
         }
@@ -164,8 +166,9 @@ int receive_data(int sfd, char* filename, int optionf)
             {
               fprintf(stderr,"Error : sending ack\n");
 
-              return -1;
+              //return -1;
             }
+            first_received=1;
             sseqnum++;
             if(sseqnum>255)
             sseqnum=0;
@@ -192,14 +195,17 @@ int receive_data(int sfd, char* filename, int optionf)
             if(boolean)
             {
               pkt_del(pkt);
-              uint8_t seqnumtosend=sseqnum;
-              if(sseqnum==0)
+              uint8_t seqnumtosend=sseqnum-1;
+              if(seqnumtosend<0)
               seqnumtosend=255;
-              if(send_ack(sfd,seqnumtosend)!=0)
+              if(first_received)
               {
-                fprintf(stderr,"Error : sending ack\n");
+                if(send_ack(sfd,seqnumtosend)!=0)
+                {
+                  fprintf(stderr,"Error : sending ack\n");
 
-                return -1;
+                  //return -1;
+                }
               }
             }
             else
@@ -221,14 +227,17 @@ int receive_data(int sfd, char* filename, int optionf)
               }
               else
               {
-                uint8_t seqnumtosend=sseqnum;
-                if(sseqnum==0)
+                uint8_t seqnumtosend=sseqnum-1;
+                if(seqnumtosend<0)
                 seqnumtosend=255;
-                if(send_ack(sfd,seqnumtosend)!=0)
+                if(first_received)
                 {
-                  fprintf(stderr,"Error : sending ack\n");
+                  if(send_ack(sfd,seqnumtosend)!=0)
+                  {
+                    fprintf(stderr,"Error : sending ack\n");
 
-                  return -1;
+                    //return -1;
+                  }
                 }
               }
             }
@@ -236,14 +245,17 @@ int receive_data(int sfd, char* filename, int optionf)
         }
         else //not in window TODO: renvoyer ack? ou pas?
         {
-          uint8_t seqnumtosend=sseqnum;
-          if(sseqnum==0)
+          uint8_t seqnumtosend=sseqnum-1;
+          if(seqnumtosend<0)
           seqnumtosend=255;
-          if(send_ack(sfd,seqnumtosend)!=0)
+          if(first_received)
           {
-            fprintf(stderr,"Error : sending ack\n");
+            if(send_ack(sfd,seqnumtosend)!=0)
+            {
+              fprintf(stderr,"Error : sending ack\n");
 
-            return -1;
+              //return -1;
+            }
           }
           pkt_del(pkt);
         }

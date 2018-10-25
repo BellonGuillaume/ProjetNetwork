@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-const clock_t TIMEOUT_TIME = 4 * CLOCKS_PER_SEC/60;
+const clock_t TIMEOUT_TIME = 4 * CLOCKS_PER_SEC/360;
 
 typedef struct node {
   uint8_t seqnum;

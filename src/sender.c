@@ -110,7 +110,7 @@ int send_data(int sfd, char* filename, int optionf)
 							if(send_pkt(sfd,pkt)!=0)
 							{
 								fprintf(stderr,"Error : sending pkt\n");
-								return -1;
+								//return -1;
 							}
 						}
 					}
@@ -152,7 +152,7 @@ int send_data(int sfd, char* filename, int optionf)
 						close(fd);
 						pkt_del(pkt);
 						window_del(window);
-						return -1;
+						//return -1;
 					}
 					memset(bufsender,0,512);
 					if(window_add(window,pkt)<0)
@@ -200,7 +200,7 @@ int send_data(int sfd, char* filename, int optionf)
 						if(send_pkt(sfd,pkt)!=0)
 						{
 							fprintf(stderr,"Error : sending pkt\n");
-							return -1;
+							//return -1;
 						}
 					}
 				}
@@ -208,6 +208,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if(eof_reached && ack_received)
 			{
+				//TODO: MODIFICATION A FAIRE, VOIR TODO RECEIVER
 				if(write(sfd,"EOF",sizeof("EOF"))<0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
@@ -223,7 +224,7 @@ int send_data(int sfd, char* filename, int optionf)
 			if(send_pkt(sfd,n_RTT->pkt)!=0)
 			{
 				fprintf(stderr,"Error : sending pkt\n");
-				return -1;
+				//return -1;
 			}
 			countData++;
 			n_RTT->time = clock();
