@@ -216,11 +216,7 @@ int receive_pkt(int sfd, pkt_t* pkt)
     fprintf(stderr,"Error receiving\n");
     return -1;
   }
-  if(signal>0)
-  {
-    //fprintf(stdout,"Finir programme\n");
-    return 1;
-  }
+
   //printf("about to decode\n");
   pkt_status_code err = pkt_decode(buf,len,pkt);
   if(err!=PKT_OK)
@@ -232,6 +228,11 @@ int receive_pkt(int sfd, pkt_t* pkt)
     }
     fprintf(stderr,"Error decoding\n");
     return -1;
+  }
+  if(pkt_get_timestamp(pkt) != 0)
+  {
+    //fprintf(stdout,"Finir programme\n");
+    return 1;
   }
   //printf("décodé\n");
   return 0;

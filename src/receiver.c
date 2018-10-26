@@ -31,7 +31,11 @@ int send_nack(int sfd, int seqnum)
   return -1;
   int err;
   err=pkt_set_type(nack,type);
-  err=err && send_pkt(sfd,nack);
+  if(send_pkt(sfd,nack)!=0)
+  {
+    pkt_del(nack);
+    return -1;
+  }
   pkt_del(nack);
   return err;
 }
@@ -54,7 +58,7 @@ int receive_data(int sfd, char* filename, int optionf)
 {
   int first_received=0;
     int sseqnum=0;
-    pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));
+    pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));                      //Creation de la fenetre
     if(buffer==NULL)
     {
       fprintf(stderr, "Error : calloc fail\n");
@@ -69,7 +73,7 @@ int receive_data(int sfd, char* filename, int optionf)
     else
     {
       //TODO: ENLEVER O_TRUNC
-      fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);
+      fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);               //Ouverture du FileDirector
       if(fd<0)
       {
         free(buffer);
@@ -83,7 +87,7 @@ int receive_data(int sfd, char* filename, int optionf)
     while(1)
     {
       int i;
-      for(i=0;i<WINDOW_LENGTH;i++)
+      for(i=0;i<WINDOW_LENGTH;i++)                                              //Regarde si un ack peut etre envoye
       {
         if(buffer[i]!=NULL)
         {
@@ -117,14 +121,14 @@ int receive_data(int sfd, char* filename, int optionf)
           }
         }
       }
-
+                                                                                //Plus de ack a envoyer
       pkt_t* pkt=pkt_new();
       int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
       fflush(stdout);
-      if(err==2)
+      if(err==2)                                                                //Si le paquet recu est tronque
       {
         uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
-        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))
+        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                  //Si il est dans la fenetre attendue
         {
           if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)
           {

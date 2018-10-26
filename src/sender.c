@@ -22,7 +22,6 @@ int send_data(int sfd, char* filename, int optionf)
 	int fd;
 	int eof_reached=0;
 	int ack_received=0;
-	clock_t RTT = 4;
 	if(!optionf)
 	{
 		fd=0;
@@ -51,7 +50,7 @@ int send_data(int sfd, char* filename, int optionf)
 	while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
 	{					//TODO gérer les messages de déconnection
 		node_t* n_RTT = window_check_RTT(window);
-		if(n_RTT == NULL)
+		if(n_RTT == NULL)																														//Pas de RTT
 		{
 			//printf("NULL\n");
 			struct pollfd fds[2];
@@ -63,7 +62,7 @@ int send_data(int sfd, char* filename, int optionf)
 			//printf("prépoll\n");
 			ret = poll(fds, 2, 20);
 			//printf("postpoll\n");
-			if (ret<0) {
+			if (ret<0) {																															//Si erreur de Select
 				fprintf(stderr,"select error\n");
 				fprintf(stderr,"ERROR: %s\n", strerror(errno));
 				if(fd!=0)
@@ -77,49 +76,62 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				window_del(window);
 				return -1;
-			}
+			}																																					//Pas d'erreur de Select
 			//printf("passé\n");
-			if (fds[0].revents & POLLIN)
+			if (fds[0].revents & POLLIN)																							//Chose a lire dans le fichier
 			{
 				//printf("STDIN INPUT\n");
-				if(window_is_full(window))
+				if(window_is_full(window))																							//Si la fenetre est pleine
 				{
 					pkt_t* ack = pkt_new();
-					if(receive_pkt(sfd,ack)!=PKT_OK)
+					if(receive_pkt(sfd,ack)!=PKT_OK)																			//Si accuse de reception recu
 					{
 						fprintf(stderr,"Error receiving ACK/NACK\n");
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
 					//printf("type : %d\n",pkt_get_type(ack));
-					if(typeAck==PTYPE_DATA)
+					if(typeAck==PTYPE_DATA)																								//Si accuse de reception de type DATA
 					//if(typeAck!=PTYPE_ACK && typeAck!= PTYPE_NACK)
 					{
 						countTypeDiscard++;
 					}
-					else if(typeAck==PTYPE_ACK)
+					else if(typeAck==PTYPE_ACK)																						//Si accuse de reception de type ACK
 					{
 						//printf("Ack recu\n");
 						window_remove(window,pkt_get_seqnum(ack));
 					}
-					else if(typeAck==PTYPE_NACK)
+					else if(typeAck==PTYPE_NACK)																					//Si accuse de reception de type NACK
 					{
 						pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 						if(pkt!=NULL)
 						{
 							countData++;
+							node_t* node = window_node_with_seqnum(window, pkt_get_seqnum(pkt));
+							if(node == NULL)
+							{
+								fprintf(stderr,"Error : node not found\n");
+								if(fd!=0)
+								close(fd);
+								window_del(window);
+								return -1;
+							}
 							if(send_pkt(sfd,pkt)!=0)
 							{
 								fprintf(stderr,"Error : sending pkt\n");
-								//return -1;
+								if(fd!=0)
+								close(fd);
+								window_del(window);
+								return -1;
 							}
+							node->time_init = clock()/CLOCKS_PER_SEC;
 						}
 					}
 					pkt_del(ack);
 				}
-				else
+				else																																		//Si la fenetre n'est pas pleine
 				{
 					int length=read(fd,bufsender,512);
-					if(length==0)
+					if(length==0)																													//Si fin de fichier
 					{
 						if(fd!=0)
 						if(close(fd)<0)
@@ -129,9 +141,9 @@ int send_data(int sfd, char* filename, int optionf)
 						}
 						//printf("Fin du programme!\n");
 						eof_reached=1;
-					}
+					}																																			//Fin de cas
 					//GERER SEQNUM ET WINDOW DU SR
-					uint8_t seqnum=sseqnum;
+					uint8_t seqnum=sseqnum;																								//Envoi d'un pkt
 					sseqnum++;
 					if(sseqnum>255)
 					sseqnum=0;
@@ -152,10 +164,11 @@ int send_data(int sfd, char* filename, int optionf)
 						close(fd);
 						pkt_del(pkt);
 						window_del(window);
-						//return -1;
+						return -1;
 					}
+					clock_t time_initialize = clock()/CLOCKS_PER_SEC;
 					memset(bufsender,0,512);
-					if(window_add(window,pkt)<0)
+					if(window_add(window,pkt, time_initialize)<0)													//Stockage du pkt dans la fenetre
 					{
 						fprintf(stderr, "Error : pkt not added on the window\n");
 						window_del(window);
@@ -168,7 +181,7 @@ int send_data(int sfd, char* filename, int optionf)
 					}
 				}
 			}
-			if (fds[1].revents & POLLIN) //TODO : double poll
+			if (fds[1].revents & POLLIN)																							//Choses a lire dans le socket
 			{
 				//printf("présent2\n");
 				pkt_t* ack = pkt_new();
@@ -184,7 +197,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
-					//printf("Ack recu\n");
+					printf("Ack recu\n");
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
@@ -193,15 +206,29 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
+					printf("Nack recu\n");
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
 						countData++;
+						node_t* node = window_node_with_seqnum(window,pkt_get_seqnum(pkt));
+						if(node == NULL)
+						{
+							fprintf(stderr,"Error : node not found\n");
+							if(fd!=0)
+							close(fd);
+							window_del(window);
+							return -1;
+						}
 						if(send_pkt(sfd,pkt)!=0)
 						{
 							fprintf(stderr,"Error : sending pkt\n");
-							//return -1;
+							if(fd!=0)
+							close(fd);
+							window_del(window);
+							return -1;
 						}
+						node->time_init = clock()/CLOCKS_PER_SEC;
 					}
 				}
 				pkt_del(ack);
@@ -209,25 +236,50 @@ int send_data(int sfd, char* filename, int optionf)
 			if(eof_reached && ack_received)
 			{
 				//TODO: MODIFICATION A FAIRE, VOIR TODO RECEIVER
-				if(write(sfd,"EOF",sizeof("EOF"))<0)
+				pkt_t* end_pkt = pkt_initialize(NULL,0,sseqnum,window_length);
+				if(end_pkt==NULL)
+				{
+					fprintf(stderr, "Error : creating ending flag\n");
+					if(fd!=0)
+					close(fd);
+					window_del(window);
+					return -1;
+				}
+				sseqnum++;
+				if(pkt_set_timestamp(end_pkt, 1) != PKT_OK)
+				{
+					fprintf(stderr, "Error : setting ending flag\n");
+					if(fd!=0)
+					close(fd);
+					pkt_del(end_pkt);
+					window_del(window);
+					return -1;
+				}
+				if(send_pkt(sfd,end_pkt)!=0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
 					if(fd!=0)
 					close(fd);
+					pkt_del(end_pkt);
+					window_del(window);
 					return -1;
 				}
+				pkt_del(end_pkt);
 			}
 		}
 		else //RTT atteint
 		{
-			//printf("Resending pkt\n");
+			printf("Resending pkt\n");
 			if(send_pkt(sfd,n_RTT->pkt)!=0)
 			{
 				fprintf(stderr,"Error : sending pkt\n");
-				//return -1;
+				if(fd!=0)
+				close(fd);
+				window_del(window);
+				return -1;
 			}
 			countData++;
-			n_RTT->time = clock();
+			n_RTT->time_init = clock()/CLOCKS_PER_SEC;
 		}
 		//printf("futur\n");
 	} //Fin de la boucle while

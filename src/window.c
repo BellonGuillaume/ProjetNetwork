@@ -7,12 +7,12 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-const clock_t TIMEOUT_TIME = 4 * CLOCKS_PER_SEC/360;
+const clock_t TIMEOUT_TIME = 4;
 
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
-  clock_t time;
+  clock_t time_init;
 } node_t;
 
 typedef struct window {
@@ -49,7 +49,7 @@ node_t* node_new(pkt_t* pkt)
   node_t* node = malloc(sizeof(node_t));
   node->seqnum=pkt_get_seqnum(pkt);
   node->pkt=pkt;
-  node->time=clock();
+  node->time_init=clock()/CLOCKS_PER_SEC;
   return node;
 }
 
@@ -90,13 +90,13 @@ void window_del(window_t* window)
   return;
 }
 
-node_t* window_check_RTT(window_t* window)
+node_t* window_node_with_seqnum(window_t* window, uint8_t r_seqnum)
 {
   int i;
   for(i=0;i<window->length;i++)
   {
     if(window->buffer[i]!=NULL){
-      if(((window->buffer[i])->time)+TIMEOUT_TIME<clock())
+      if(((window->buffer[i])->seqnum) == r_seqnum)
       {
         return window->buffer[i];
       }
@@ -105,13 +105,29 @@ node_t* window_check_RTT(window_t* window)
   return NULL;
 }
 
-int window_add(window_t* window, pkt_t* pkt)
+node_t* window_check_RTT(window_t* window)
+{
+  int i;
+  for(i=0;i<window->length;i++)
+  {
+    if(window->buffer[i]!=NULL){
+      if(((window->buffer[i])->time_init)+TIMEOUT_TIME<(clock()/CLOCKS_PER_SEC))
+      {
+        return window->buffer[i];
+      }
+    }
+  }
+  return NULL;
+}
+
+int window_add(window_t* window, pkt_t* pkt, clock_t time_initialize)
 {
   if(window->size_used<window->length)
   {
     //printf("%d,%d\n",window->size_used,window->length);
     node_t* node = node_new(pkt);
     window->buffer[window->size_used]=node;
+    node->time_init = time_initialize;
     window->size_used++;
     return 0;
   }
