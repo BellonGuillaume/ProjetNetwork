@@ -1,18 +1,5 @@
 #include "sender.h"
 
-//Rappel de la structure
-/*struct __attribute__((__packed_)) pkt {
-uint8_t window:5;
-uint8_t tr:1;
-uint8_t type:2;
-uint8_t seqnum;
-uint16_t length;
-uint32_t timestamp;
-uint32_t crc1;
-char* payload;
-uint32_t crc2;
-};*/
-
 int countData=0;
 
 int send_data(int sfd, char* filename, int optionf)
@@ -22,6 +9,8 @@ int send_data(int sfd, char* filename, int optionf)
 	int fd;
 	int eof_reached=0;
 	int ack_received=0;
+	int flag_last_ackw=0;
+	int done=0;
 	if(!optionf)
 	{
 		fd=0;
@@ -47,7 +36,7 @@ int send_data(int sfd, char* filename, int optionf)
 		return EXIT_FAILURE;
 	}
 	int countTypeDiscard=0;
-	while(!(eof_reached && ack_received)) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
+	while(!done) //TODO faire un if "place dans la window" -> read stdin (receive ack quand même)| else -> receive ack
 	{					//TODO gérer les messages de déconnection
 		node_t* n_RTT = window_check_RTT(window);
 		if(n_RTT == NULL)																														//Pas de RTT
@@ -148,43 +137,45 @@ int send_data(int sfd, char* filename, int optionf)
 						}
 						//printf("Fin du programme!\n");
 						eof_reached=1;
-					}																																			//Fin de cas
-					//GERER SEQNUM ET WINDOW DU SR
-					uint8_t seqnum=sseqnum;																								//Envoi d'un pkt
-					sseqnum++;
-					if(sseqnum>255)
-					sseqnum=0;
-					pkt_t* pkt=pkt_initialize(bufsender,length,seqnum,window_length);
-					if(pkt==NULL)
-					{
-						fprintf(stderr,"Error initialiazing a packet\n");
-						if(fd!=0)
-						close(fd);
-						window_del(window);
-						return -1;
 					}
-					countData++;
-					if(send_pkt(sfd,pkt)!=0)
-					{
-						fprintf(stderr,"Error : sending pkt\n");
-						if(fd!=0)
-						close(fd);
-						pkt_del(pkt);
-						window_del(window);
-						return -1;
-					}
-					//double time_initialize = (double) gettimeofday(...)/CLOCKS_PER_SEC;
-					memset(bufsender,0,512);
-					if(window_add(window,pkt)<0)													//Stockage du pkt dans la fenetre
-					{
-						fprintf(stderr, "Error : pkt not added on the window\n");
-						window_del(window);
-						pkt_del(pkt);
-						if(close(fd)<0){
-							fprintf(stderr, "Error : the file wasn't closed\n");
+					if(!eof_reached){
+						uint8_t seqnum=sseqnum;																								//Envoi d'un pkt
+						sseqnum++;
+						if(sseqnum>255)
+						sseqnum=0;
+						pkt_t* pkt;
+						pkt=pkt_initialize(bufsender,length,seqnum,window_length);
+						if(pkt==NULL)
+						{
+							fprintf(stderr,"Error initialiazing a packet\n");
+							if(fd!=0)
+							close(fd);
+							window_del(window);
+							return -1;
+						}
+						countData++;
+						if(send_pkt(sfd,pkt)!=0)
+						{
+							fprintf(stderr,"Error : sending pkt\n");
+							if(fd!=0)
+							close(fd);
+							pkt_del(pkt);
+							window_del(window);
+							return -1;
+						}
+						//double time_initialize = (double) gettimeofday(...)/CLOCKS_PER_SEC;
+						memset(bufsender,0,512);
+						if(window_add(window,pkt)<0)																					//Stockage du pkt dans la fenetre
+						{
+							fprintf(stderr, "Error : pkt not added on the window\n");
+							window_del(window);
+							pkt_del(pkt);
+							if(close(fd)<0){
+								fprintf(stderr, "Error : the file wasn't closed\n");
+								return EXIT_FAILURE;
+							}
 							return EXIT_FAILURE;
 						}
-						return EXIT_FAILURE;
 					}
 				}
 			}
@@ -208,9 +199,16 @@ int send_data(int sfd, char* filename, int optionf)
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
+						printf("last ack received\n");
 						ack_received=1;
 					}
-					printf("check\n");
+					printf("eof : %d, ack_received %d, flag_last_ackw %d\n",eof_reached,ack_received,flag_last_ackw);
+					if(eof_reached && flag_last_ackw)
+					{
+						done=1;
+						printf("done\n");
+					}
+					//printf("check\n");
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
@@ -241,9 +239,13 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				pkt_del(ack);
 			}
-			if(eof_reached && ack_received)
+			if(eof_reached && window->size_used==0)
 			{
-				//TODO: MODIFICATION A FAIRE, VOIR TODO RECEIVER
+				printf("last ack received\n");
+				ack_received=1;
+			}
+			if((eof_reached && ack_received) && !flag_last_ackw)
+			{
 				pkt_t* end_pkt = pkt_initialize(NULL,0,sseqnum,window_length);
 				if(end_pkt==NULL)
 				{
@@ -254,15 +256,6 @@ int send_data(int sfd, char* filename, int optionf)
 					return -1;
 				}
 				sseqnum++;
-				if(pkt_set_timestamp(end_pkt, 1) != PKT_OK)
-				{
-					fprintf(stderr, "Error : setting ending flag\n");
-					if(fd!=0)
-					close(fd);
-					pkt_del(end_pkt);
-					window_del(window);
-					return -1;
-				}
 				if(send_pkt(sfd,end_pkt)!=0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
@@ -272,10 +265,20 @@ int send_data(int sfd, char* filename, int optionf)
 					window_del(window);
 					return -1;
 				}
-				pkt_del(end_pkt);
+				if(window_add(window,end_pkt)!=0)
+				{
+					fprintf(stderr, "Error : adding disconnecting pkt to the window\n");
+					if(fd!=0)
+					close(fd);
+					pkt_del(end_pkt);
+					window_del(window);
+					return -1;
+				}
+				flag_last_ackw=1;
+				countData++;
 			}
 		}
-		else //RTT atteint
+		else 																																				//RTT atteint
 		{
 			printf("Resending pkt\n");
 			if(send_pkt(sfd,n_RTT->pkt)!=0)
@@ -331,7 +334,7 @@ int main (int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 	printf("=== Data successfully sent ===\n");
-	printf("Number of Data sent : %d\n",countData);
+	printf("Number of PKT_DATA sent : %d\n",countData);
 	return EXIT_SUCCESS;
 
 }

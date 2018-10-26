@@ -146,8 +146,12 @@ int receive_data(int sfd, char* filename, int optionf)
       }
       else if(err==1)
       {
+        if(send_ack(sfd,pkt_get_seqnum(pkt))<0)
+        {
+          fprintf(stderr,"Error sending final ACK\n");
+          return -1;
+        }
         pkt_del(pkt);
-        //printf("Fin du receiver\n");
         free(buffer);
         return 0;
       }
