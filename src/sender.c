@@ -60,7 +60,7 @@ int send_data(int sfd, char* filename, int optionf)
 			fds[1].fd = sfd;
 			fds[1].events = POLLIN;
 			//printf("prépoll\n");
-			ret = poll(fds, 2, 20);
+			ret = poll(fds, 2, 100);
 			//printf("postpoll\n");
 			if (ret<0) {																															//Si erreur de Select
 				fprintf(stderr,"select error\n");
@@ -123,7 +123,7 @@ int send_data(int sfd, char* filename, int optionf)
 								window_del(window);
 								return -1;
 							}
-							node->time_init = clock()/CLOCKS_PER_SEC;
+						  gettimeofday(&(node->time_init),NULL);
 						}
 					}
 					pkt_del(ack);
@@ -166,9 +166,9 @@ int send_data(int sfd, char* filename, int optionf)
 						window_del(window);
 						return -1;
 					}
-					clock_t time_initialize = clock()/CLOCKS_PER_SEC;
+					//double time_initialize = (double) gettimeofday(...)/CLOCKS_PER_SEC;
 					memset(bufsender,0,512);
-					if(window_add(window,pkt, time_initialize)<0)													//Stockage du pkt dans la fenetre
+					if(window_add(window,pkt)<0)													//Stockage du pkt dans la fenetre
 					{
 						fprintf(stderr, "Error : pkt not added on the window\n");
 						window_del(window);
@@ -228,7 +228,7 @@ int send_data(int sfd, char* filename, int optionf)
 							window_del(window);
 							return -1;
 						}
-						node->time_init = clock()/CLOCKS_PER_SEC;
+					  gettimeofday(&(node->time_init),NULL);
 					}
 				}
 				pkt_del(ack);
@@ -279,7 +279,7 @@ int send_data(int sfd, char* filename, int optionf)
 				return -1;
 			}
 			countData++;
-			n_RTT->time_init = clock()/CLOCKS_PER_SEC;
+		  gettimeofday(&(n_RTT->time_init),NULL);
 		}
 		//printf("futur\n");
 	} //Fin de la boucle while

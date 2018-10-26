@@ -5,14 +5,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <arpa/inet.h>
-#include <time.h>
+#include <sys/time.h>
 
-const clock_t TIMEOUT_TIME = 4;
+const int TIMEOUT_TIME = 4;
 
 typedef struct node {
   uint8_t seqnum;
   pkt_t* pkt;
-  clock_t time_init;
+  struct timeval time_init;
 } node_t;
 
 typedef struct window {
@@ -49,7 +49,7 @@ node_t* node_new(pkt_t* pkt)
   node_t* node = malloc(sizeof(node_t));
   node->seqnum=pkt_get_seqnum(pkt);
   node->pkt=pkt;
-  node->time_init=clock()/CLOCKS_PER_SEC;
+  gettimeofday(&(node->time_init),NULL);
   return node;
 }
 
@@ -107,11 +107,14 @@ node_t* window_node_with_seqnum(window_t* window, uint8_t r_seqnum)
 
 node_t* window_check_RTT(window_t* window)
 {
+  struct timeval end;
   int i;
   for(i=0;i<window->length;i++)
   {
     if(window->buffer[i]!=NULL){
-      if(((window->buffer[i])->time_init)+TIMEOUT_TIME<(clock()/CLOCKS_PER_SEC))
+      gettimeofday(&end, NULL);
+      //printf("Time pkt window = %lf, timeout = %lf, clock = %lf\n", (double)(window->buffer[i])->time_init, TIMEOUT_TIME, (double)(clock()/CLOCKS_PER_SEC));
+      if(((end.tv_sec - ((window->buffer[i])->time_init).tv_sec))>= TIMEOUT_TIME)
       {
         return window->buffer[i];
       }
@@ -120,14 +123,13 @@ node_t* window_check_RTT(window_t* window)
   return NULL;
 }
 
-int window_add(window_t* window, pkt_t* pkt, clock_t time_initialize)
+int window_add(window_t* window, pkt_t* pkt)
 {
   if(window->size_used<window->length)
   {
     //printf("%d,%d\n",window->size_used,window->length);
     node_t* node = node_new(pkt);
     window->buffer[window->size_used]=node;
-    node->time_init = time_initialize;
     window->size_used++;
     return 0;
   }
