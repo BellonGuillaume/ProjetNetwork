@@ -109,11 +109,13 @@ node_t* window_check_RTT(window_t* window)
 {
   struct timeval end;
   int i;
+  printf("check RTT\n" );
   for(i=0;i<window->length;i++)
   {
     if(window->buffer[i]!=NULL){
+      printf("SEQ : %d\n", window->buffer[i]->seqnum);
       gettimeofday(&end, NULL);
-      //printf("Time pkt window = %lf, timeout = %lf, clock = %lf\n", (double)(window->buffer[i])->time_init, TIMEOUT_TIME, (double)(clock()/CLOCKS_PER_SEC));
+      printf("SEQ : %d, Time pkt window = %ld, timeout = %ld, clock = %ld\n", window->buffer[i]->seqnum,window->buffer[i]->time_init.tv_sec,TIMEOUT_TIME,end.tv_sec);
       if(((end.tv_sec - ((window->buffer[i])->time_init).tv_sec))>= TIMEOUT_TIME)
       {
         return window->buffer[i];
@@ -125,6 +127,7 @@ node_t* window_check_RTT(window_t* window)
 
 int window_add(window_t* window, pkt_t* pkt)
 {
+  printf("Add SEQ : %d\n",pkt_get_seqnum(pkt));
   if(window->size_used<window->length)
   {
     //printf("%d,%d\n",window->size_used,window->length);
@@ -172,12 +175,22 @@ void window_remove_until(window_t* window,int i)
 
 void window_remove(window_t* window, int seqnum)
 {
+  printf("Remove SEQ : %d\n",seqnum);
   if(window->size_used==0)
   return;
   int i;
-  for(i=0;window->buffer[i]->seqnum!=seqnum && i<window->length;i++);
-  if(i==window->length)
+  int flag=0;
+  for(i=0;window->buffer[i]!=NULL && i<window->length;i++)
+  {
+    if((window->buffer[i])->seqnum==seqnum)
+    {
+      flag=1;
+      break;
+    }
+  }
+  if(!flag)
   return;
+  printf("REMOVING\n");
   window_remove_until(window,i);
 }
 

@@ -169,7 +169,7 @@ int receive_buf(int sfd, char* buf, int* len)
         fds[0].fd=sfd;
         fds[0].events=POLLIN;
         //printf("about to poll\n");
-        ret = poll(fds, 1, -1 );
+        ret = poll(fds, 1, 1 );
 
         if (ret<0)
         {

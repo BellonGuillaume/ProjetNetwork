@@ -60,7 +60,7 @@ int send_data(int sfd, char* filename, int optionf)
 			fds[1].fd = sfd;
 			fds[1].events = POLLIN;
 			//printf("prépoll\n");
-			ret = poll(fds, 2, 100);
+			ret = poll(fds, 2, 1000);
 			//printf("postpoll\n");
 			if (ret<0) {																															//Si erreur de Select
 				fprintf(stderr,"select error\n");
@@ -77,7 +77,14 @@ int send_data(int sfd, char* filename, int optionf)
 				window_del(window);
 				return -1;
 			}																																					//Pas d'erreur de Select
-			//printf("passé\n");
+			int i;
+			for(i=0;i<window->length;i++)
+			{
+				if(window->buffer[i]!=NULL)
+				{
+					printf("WINDOW %d : SEQ %d\n", i, window->buffer[i]->seqnum);
+				}
+			}
 			if (fds[0].revents & POLLIN)																							//Chose a lire dans le fichier
 			{
 				//printf("STDIN INPUT\n");
@@ -203,6 +210,7 @@ int send_data(int sfd, char* filename, int optionf)
 					{
 						ack_received=1;
 					}
+					printf("check\n");
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
