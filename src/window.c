@@ -109,7 +109,7 @@ node_t* window_check_RTT(window_t* window)
 {
   struct timeval end;
   int i;
-  printf("check RTT\n" );
+  //printf("check RTT\n" );
   for(i=0;i<window->length;i++)
   {
     if(window->buffer[i]!=NULL){
@@ -127,7 +127,7 @@ node_t* window_check_RTT(window_t* window)
 
 int window_add(window_t* window, pkt_t* pkt)
 {
-  printf("Add SEQ : %d\n",pkt_get_seqnum(pkt));
+  //printf("Add SEQ : %d\n",pkt_get_seqnum(pkt));
   if(window->size_used<window->length)
   {
     //printf("%d,%d\n",window->size_used,window->length);

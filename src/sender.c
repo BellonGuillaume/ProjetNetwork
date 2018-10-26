@@ -71,7 +71,7 @@ int send_data(int sfd, char* filename, int optionf)
 			{
 				if(window->buffer[i]!=NULL)
 				{
-					printf("WINDOW %d : SEQ %d\n", i, window->buffer[i]->seqnum);
+					//printf("WINDOW %d : SEQ %d\n", i, window->buffer[i]->seqnum);
 				}
 			}
 			if (fds[0].revents & POLLIN)																							//Chose a lire dans le fichier
@@ -82,7 +82,7 @@ int send_data(int sfd, char* filename, int optionf)
 					pkt_t* ack = pkt_new();
 					if(receive_pkt(sfd,ack)!=PKT_OK)																			//Si accuse de reception recu
 					{
-						fprintf(stderr,"Error receiving ACK/NACK\n");
+						//Rien à faire
 					}
 					ptypes_t typeAck = pkt_get_type(ack);
 					//printf("type : %d\n",pkt_get_type(ack));
@@ -185,7 +185,7 @@ int send_data(int sfd, char* filename, int optionf)
 				pkt_t* ack = pkt_new();
 				if(receive_pkt(sfd,ack)!=PKT_OK)
 				{
-					fprintf(stderr,"Error receiving ACK/NACK\n");
+					//Rien à faire
 				}
 				ptypes_t typeAck = pkt_get_type(ack);
 				if(typeAck==PTYPE_DATA)
@@ -195,14 +195,14 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_ACK)
 				{
-					printf("Ack recu\n");
+					//printf("Ack recu\n");
 					window_remove(window,pkt_get_seqnum(ack));
 					if(eof_reached && window->size_used==0)
 					{
-						printf("last ack received\n");
+						//printf("last ack received\n");
 						ack_received=1;
 					}
-					printf("eof : %d, ack_received %d, flag_last_ackw %d\n",eof_reached,ack_received,flag_last_ackw);
+					//printf("eof : %d, ack_received %d, flag_last_ackw %d\n",eof_reached,ack_received,flag_last_ackw);
 					if(eof_reached && flag_last_ackw)
 					{
 						done=1;
@@ -212,7 +212,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
-					printf("Nack recu\n");
+					//printf("Nack recu\n");
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
@@ -241,7 +241,7 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if(eof_reached && window->size_used==0)
 			{
-				printf("last ack received\n");
+				//printf("last ack received\n");
 				ack_received=1;
 			}
 			if((eof_reached && ack_received) && !flag_last_ackw)
@@ -276,11 +276,12 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				flag_last_ackw=1;
 				countData++;
+				/*A enlever pour un disconnect pas abrupt*/done=1; //TODO: à enlever
 			}
 		}
 		else 																																				//RTT atteint
 		{
-			printf("Resending pkt\n");
+			//printf("Resending pkt\n");
 			if(send_pkt(sfd,n_RTT->pkt)!=0)
 			{
 				fprintf(stderr,"Error : sending pkt\n");
