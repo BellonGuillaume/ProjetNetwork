@@ -104,6 +104,7 @@ int receive_data(int sfd, char* filename, int optionf)
               }
               //return -1;
             }
+            buffer[i]=NULL;
             if(send_ack(sfd,sseqnum)==-1)
             {
               fprintf(stderr,"Error : sending ack\n");

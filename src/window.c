@@ -113,9 +113,9 @@ node_t* window_check_RTT(window_t* window)
   for(i=0;i<window->length;i++)
   {
     if(window->buffer[i]!=NULL){
-      printf("SEQ : %d\n", window->buffer[i]->seqnum);
+      //printf("SEQ : %d\n", window->buffer[i]->seqnum);
       gettimeofday(&end, NULL);
-      printf("SEQ : %d, Time pkt window = %ld, timeout = %ld, clock = %ld\n", window->buffer[i]->seqnum,window->buffer[i]->time_init.tv_sec,TIMEOUT_TIME,end.tv_sec);
+      //printf("SEQ : %d, Time pkt window = %ld, timeout = %ld, clock = %ld\n", window->buffer[i]->seqnum,window->buffer[i]->time_init.tv_sec,TIMEOUT_TIME,end.tv_sec);
       if(((end.tv_sec - ((window->buffer[i])->time_init).tv_sec))>= TIMEOUT_TIME)
       {
         return window->buffer[i];
@@ -175,7 +175,7 @@ void window_remove_until(window_t* window,int i)
 
 void window_remove(window_t* window, int seqnum)
 {
-  printf("Remove SEQ : %d\n",seqnum);
+  //printf("Remove SEQ : %d\n",seqnum);
   if(window->size_used==0)
   return;
   int i;
@@ -190,7 +190,7 @@ void window_remove(window_t* window, int seqnum)
   }
   if(!flag)
   return;
-  printf("REMOVING\n");
+  //printf("REMOVING\n");
   window_remove_until(window,i);
 }
 
