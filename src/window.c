@@ -36,7 +36,8 @@ window_t* window_new(int length)
   window->length = length;
   window->size_used = 0;
   window->buffer = calloc(length,sizeof(node_t));
-  for(int i=0;i<window->length;i++)
+  int i;
+  for(i = 0;i<window->length;i++)
   {
     window->buffer[i]=NULL;
   }
@@ -72,7 +73,8 @@ void window_del(window_t* window)
   {
     if(window->buffer!=NULL)
     {
-      for(int i=0;i<window->length;i++)
+      int i;
+      for(i=0;i<window->length;i++)
       {
         if(window->buffer[i]!=NULL)
         {
@@ -118,7 +120,8 @@ int window_add(window_t* window, pkt_t* pkt)
 
 pkt_t* window_find(window_t* window, int seqnum)
 {
-  for(int i=0;i<window->size_used;i++)
+  int i;
+  for(i=0;i<window->size_used;i++)
   {
     if(window->buffer[i]->seqnum==seqnum)
     {
@@ -142,7 +145,8 @@ void window_remove_first(window_t* window)
 
 void window_remove_until(window_t* window,int i)
 {
-  for(int j=0;j<=i;j++)
+  int j;
+  for(j=0;j<=i;j++)
   {
     window_remove_first(window);
   }

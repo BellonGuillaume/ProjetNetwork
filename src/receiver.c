@@ -82,7 +82,8 @@ int receive_data(int sfd, char* filename, int optionf)
     int acks=0; //TODO :à remplacer par le selective repeat -> correspond à s'il faut renvoyer un ack
     while(1)
     {
-      for(int i=0;i<WINDOW_LENGTH;i++)
+      int i;
+      for(i=0;i<WINDOW_LENGTH;i++)
       {
         if(buffer[i]!=NULL)
         {
@@ -152,7 +153,8 @@ int receive_data(int sfd, char* filename, int optionf)
         {
           if(sseqnum==pkt_seqnum)
           {
-            for(int i=0;i<WINDOW_LENGTH;i++)
+            int i;
+            for(i=0;i<WINDOW_LENGTH;i++)
             {
               if(buffer[i]!=NULL)
               {
@@ -182,7 +184,8 @@ int receive_data(int sfd, char* filename, int optionf)
           else
           {
             int boolean=0;
-            for(int i=0;i<WINDOW_LENGTH;i++)
+            int i;
+            for(i=0;i<WINDOW_LENGTH;i++)
             {
               if(buffer[i]!=NULL)
               {
@@ -211,7 +214,8 @@ int receive_data(int sfd, char* filename, int optionf)
             else
             {
               int added=0;
-              for(int i=0;i<WINDOW_LENGTH;i++)
+              int i;
+              for(i=0;i<WINDOW_LENGTH;i++)
               {
                 if(buffer[i]==NULL)
                 {

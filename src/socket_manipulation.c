@@ -127,7 +127,8 @@ int send_buf(int sfd, char* buf, size_t len)
 {
   //printf("sendbuf\n");
   int length;
-  for(int totalLength=0;totalLength<len;totalLength+=length)
+  int totalLength;
+  for(totalLength=0;totalLength<len;totalLength+=length)
   {
     length=write(sfd,buf,len);
     //printf("write\n");
