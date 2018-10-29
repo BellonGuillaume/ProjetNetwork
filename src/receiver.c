@@ -142,6 +142,15 @@ int receive_data(int sfd, char* filename, int optionf)
       else
       {
         pkt_del(pkt);
+        if(first_received)
+        {
+          if(send_ack(sfd,sseqnum)!=0)
+          {
+            fprintf(stderr,"Error : sending ack\n");
+
+            //return -1;
+          }
+        }
       }
     }
     else if(err==1)                                                           //Si le paquet contient le EOF
@@ -149,6 +158,9 @@ int receive_data(int sfd, char* filename, int optionf)
       if(send_ack(sfd,pkt_get_seqnum(pkt)+1)<0)
       {
         fprintf(stderr,"Error sending final ACK\n");
+        pkt_del(pkt);
+        free(buffer);
+        buffer = NULL;
         return -1;
       }
       pkt_del(pkt);
@@ -233,6 +245,15 @@ int receive_data(int sfd, char* filename, int optionf)
             if(!added)                                                          //Si pas ete ajoute
             {
               pkt_del(pkt);
+              if(first_received)
+              {
+                if(send_ack(sfd,sseqnum)!=0)
+                {
+                  fprintf(stderr,"Error : sending ack\n");
+
+                  //return -1;
+                }
+              }
               fprintf(stderr,"Error : no space on buffer - pkt discarded\n"); //<<-------------------->>
             }
             else                                                                //Si ajoute
@@ -250,7 +271,7 @@ int receive_data(int sfd, char* filename, int optionf)
           }
         }
       }
-      else //not in window TODO: renvoyer ack? ou pas?
+      else                                                                      //Si pas dans la fenetre
       {
         if(first_received)
         {

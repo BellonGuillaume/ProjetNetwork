@@ -4,7 +4,7 @@ int countData=0;
 
 int send_data(int sfd, char* filename, int optionf)
 {
-	uint8_t window_length=4;
+	uint8_t window_length=31;
 	int ret=-1;
 	int fd;
 	int eof_reached=0;
