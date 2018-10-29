@@ -335,10 +335,12 @@ int main (int argc, char* argv[])
 	}
 	if(send_data(sfd, filename, optionf) < 0) {
 		fprintf(stderr, "Sending error\n");
+		close(sfd);
 		return EXIT_FAILURE;
 	}
 	printf("=== Data successfully sent ===\n");
 	printf("Number of PKT_DATA sent : %d\n",countData);
+	close(sfd);
 	return EXIT_SUCCESS;
 
 }

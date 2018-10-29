@@ -305,10 +305,12 @@ int main(int argc, char* argv[])
   //printf("about to receive_data\n");
   if(receive_data(sfd, filename, optionf) < 0) {
     fprintf(stderr, "Reception error\n");
+    close(sfd);
     return EXIT_FAILURE;
   }
   printf("=== Data successfully received ===\n");
   printf("Number of NACK : %d\n",countNack);
   printf("Number of ACK : %d\n",countAck);
+  close(sfd);
   return EXIT_SUCCESS;
 }
