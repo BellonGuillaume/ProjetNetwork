@@ -94,7 +94,7 @@ int send_data(int sfd, char* filename, int optionf)
 					else if(typeAck==PTYPE_ACK)																						//Si accuse de reception de type ACK
 					{
 						//printf("Ack recu\n");
-						window_remove(window,pkt_get_seqnum(ack));
+						window_remove(window,pkt_get_seqnum(ack)-1);
 					}
 					else if(typeAck==PTYPE_NACK)																					//Si accuse de reception de type NACK
 					{
@@ -196,7 +196,7 @@ int send_data(int sfd, char* filename, int optionf)
 				else if(typeAck==PTYPE_ACK)
 				{
 					//printf("Ack recu\n");
-					window_remove(window,pkt_get_seqnum(ack));
+					window_remove(window,pkt_get_seqnum(ack)-1);
 					if(eof_reached && window->size_used==0)
 					{
 						//printf("last ack received\n");
@@ -246,7 +246,11 @@ int send_data(int sfd, char* filename, int optionf)
 			}
 			if((eof_reached && ack_received) && !flag_last_ackw)
 			{
-				pkt_t* end_pkt = pkt_initialize(NULL,0,sseqnum,window_length);
+				uint8_t seqnum=sseqnum;																									//Envoi d'un pkt
+				sseqnum++;
+				if(sseqnum>255)
+				sseqnum=0;
+				pkt_t* end_pkt = pkt_initialize(NULL,0,seqnum,window_length);
 				if(end_pkt==NULL)
 				{
 					fprintf(stderr, "Error : creating ending flag\n");
@@ -255,7 +259,6 @@ int send_data(int sfd, char* filename, int optionf)
 					window_del(window);
 					return -1;
 				}
-				sseqnum++;
 				if(send_pkt(sfd,end_pkt)!=0)
 				{
 					fprintf(stderr, "Error : sending ending flag\n");
@@ -276,7 +279,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				flag_last_ackw=1;
 				countData++;
-				/*A enlever pour un disconnect pas abrupt*/done=1; //TODO: à enlever
+				/*A enlever pour un disconnect pas abrupt*/done=1;											//<--------------------------
 			}
 		}
 		else 																																				//RTT atteint
