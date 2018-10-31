@@ -1,7 +1,6 @@
 #include "receiver.h"
 
-//TODO: utiliser le timestamp pour signaler la fin du programme. Le mettre à 1 et vérifier dans le receiver si timestamp > 0
-// modifier le sender pour qu'en cas d'EOF, il envoie un paquet avec le timestamp à 1 au lieu de simplement EOF.
+//TODO: Checker que les seqnum et autres uint8_t ne sont pas écrits en int
 
 int countNack=0;
 int countAck=0;
@@ -31,11 +30,7 @@ int send_nack(int sfd, int seqnum)
   return -1;
   int err;
   err=pkt_set_type(nack,type);
-  if(send_pkt(sfd,nack)!=0)
-  {
-    pkt_del(nack);
-    return -1;
-  }
+  err=err && send_pkt(sfd,nack);
   pkt_del(nack);
   return err;
 }
@@ -48,7 +43,7 @@ int process_data(int fd, pkt_t* pkt)
   {
     //Fin du programme
     if(fd!=1)
-    close(fd);
+      close(fd);
     return 0;
   }
   return 0;
@@ -56,237 +51,205 @@ int process_data(int fd, pkt_t* pkt)
 
 int receive_data(int sfd, char* filename, int optionf)
 {
-  int first_received=0;
-  int sseqnum=0;
-  pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));                      //Creation de la fenetre
-  if(buffer==NULL)
-  {
-    fprintf(stderr, "Error : calloc fail\n");
-    return -1;
-  }
-  int ret=-1;
-  int fd;
-  if(!optionf)
-  {
-    fd=1;
-  }
-  else
-  {
-    //TODO: ENLEVER O_TRUNC
-    fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);               //Ouverture du FileDirector
-    if(fd<0)
+    int sseqnum=0;
+    pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));
+    if(buffer==NULL)
     {
-      free(buffer);
-      fprintf(stderr,"Error: file might not exist\n");
+      fprintf(stderr, "Error : calloc fail\n");
       return -1;
     }
-  }
-  char bufreceiver[1024];
-  memset(bufreceiver,0,1024);
-  int acks=0; //TODO :à remplacer par le selective repeat -> correspond à s'il faut renvoyer un ack
-  while(1)
-  {
-    int i;
-    for(i=0;i<WINDOW_LENGTH;i++)                                              //Regarde si un ack peut etre envoye
+    int ret=-1;
+    int fd;
+    if(!optionf)
     {
-      if(buffer[i]!=NULL)
-      {
-        if(pkt_get_seqnum(buffer[i])==sseqnum)
-        {
-          if(process_data(fd,buffer[i])!=0)
-          {
-            fprintf(stderr,"Error : process data\n");
-            free(buffer);
-            if(close(fd)<0)
-            {
-              fprintf(stderr,"Error : the file wasn't closed\n");
-              return -1;
-            }
-            //return -1;
-          }
-          buffer[i]=NULL;
-          if(send_ack(sfd,sseqnum+1)==-1)
-          {
-            fprintf(stderr,"Error : sending ack\n");
-            free(buffer);
-            if(close(fd)<0)
-            {
-              fprintf(stderr,"Error : the file wasn't closed\n");
-              return -1;
-            }
-            //return -1;
-          }
-          sseqnum++;
-          if(sseqnum>255)
-          sseqnum=0;
-        }
-      }
+      fd=1;
     }
-    //Plus de ack a envoyer
-    pkt_t* pkt=pkt_new();
-    int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
-    fflush(stdout);
-    if(err==2)                                                                //Si le paquet recu est tronque
+    else
     {
-      uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
-      if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                  //Si il est dans la fenetre attendue
+      //TODO: ENLEVER O_TRUNC
+      fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);
+      if(fd<0)
       {
-        if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)
-        {
-          fprintf(stderr,"Error : sending nack\n");
-          pkt_del(pkt);
-          //return -1;
-        }
-        pkt_del(pkt);
-      }
-      else
-      {
-        pkt_del(pkt);
-        if(first_received)
-        {
-          if(send_ack(sfd,sseqnum)!=0)
-          {
-            fprintf(stderr,"Error : sending ack\n");
-
-            //return -1;
-          }
-        }
-      }
-    }
-    else if(err==1)                                                           //Si le paquet contient le EOF
-    {
-      if(send_ack(sfd,pkt_get_seqnum(pkt)+1)<0)
-      {
-        fprintf(stderr,"Error sending final ACK\n");
-        pkt_del(pkt);
         free(buffer);
-        buffer = NULL;
-        return -1;
+        fprintf(stderr,"Error: file might not exist\n");
+				return -1;
       }
-      pkt_del(pkt);
-      free(buffer);
-      return 0;
     }
-    else if(err==0)                                                           //Si il n'est pas modifie
+    char bufreceiver[1024];
+    memset(bufreceiver,0,1024);
+    int acks=0; //TODO :à remplacer par le selective repeat -> correspond à s'il faut renvoyer un ack
+    while(1)
     {
-      uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
-      if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                  //Si il est dans la fenetre attendue
+      for(int i=0;i<WINDOW_LENGTH;i++)
       {
-        if(sseqnum==pkt_seqnum)                                               //Si c'est le premier paquet attendu
+        if(buffer[i]!=NULL)
         {
-          int i;
-          for(i=0;i<WINDOW_LENGTH;i++)
+          if(pkt_get_seqnum(buffer[i])==sseqnum)
           {
-            if(buffer[i]!=NULL)
+            if(process_data(fd,buffer[i])!=0)
             {
-              if(pkt_get_seqnum(buffer[i])==sseqnum)
+              fprintf(stderr,"Error : process data\n");
+              free(buffer);
+              if(close(fd)<0)
               {
-                pkt_del(buffer[i]);
+                fprintf(stderr,"Error : the file wasn't close\n");
+                return -1;
               }
+              return -1;
             }
+            if(send_ack(sfd,sseqnum)==-1)
+            {
+              fprintf(stderr,"Error : sending ack\n");
+              free(buffer);
+              if(close(fd)<0)
+              {
+                fprintf(stderr,"Error : the file wasn't close\n");
+                return -1;
+              }
+              return -1;
+            }
+            sseqnum++;
+            if(sseqnum>255)
+            sseqnum=0;
           }
-          if(send_ack(sfd,sseqnum+1)!=0)
-          {
-            fprintf(stderr,"Error : sending ack\n");
+        }
+      }
 
-            //return -1;                                                         //<<--------Free---------->>
-          }
-          first_received=1;
-          sseqnum++;
-          if(sseqnum>255)
-          sseqnum=0;
-          if(process_data(fd,pkt)!=0)
+      pkt_t* pkt=pkt_new();
+      int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
+      fflush(stdout);
+      if(err==2)
+      {
+        uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
+        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))
+        {
+          if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)
           {
-            fprintf(stderr,"Error : processing data\n");
-
+            fprintf(stderr,"Error : sending nack\n");
+            pkt_del(pkt);
             return -1;
           }
+          pkt_del(pkt);
         }
-        else                                                                  //Si pas le premier paquet attendu
+        else
         {
-          int boolean=0;
-          int i;
-          for(i=0;i<WINDOW_LENGTH && !boolean;i++)
+          pkt_del(pkt);
+        }
+      }
+      else if(err==1)
+      {
+        pkt_del(pkt);
+        //printf("Fin du receiver\n");
+        free(buffer);
+        return 0;
+      }
+      else if(err==0)
+      {
+        uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
+        if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))
+        {
+          if(sseqnum==pkt_seqnum)
           {
-            if(buffer[i]!=NULL)
+            for(int i=0;i<WINDOW_LENGTH;i++)
             {
-              if(pkt_get_seqnum(buffer[i])==pkt_seqnum)
+              if(buffer[i]!=NULL)
               {
-                boolean=1;
+                if(pkt_get_seqnum(buffer[i])==sseqnum)
+                {
+                  pkt_del(buffer[i]);
+                }
               }
             }
-          }
-          if(boolean)                                                           //Si deja dans le buffer
-          {
-            pkt_del(pkt);
-            if(first_received)
+            if(send_ack(sfd,sseqnum)!=0)
             {
-              if(send_ack(sfd,sseqnum)!=0)
+              fprintf(stderr,"Error : sending ack\n");
+
+              return -1;
+            }
+            sseqnum++;
+            if(sseqnum>255)
+            sseqnum=0;
+            if(process_data(fd,pkt)!=0)
+            {
+              fprintf(stderr,"Error : processing data\n");
+
+              return -1;
+            }
+          }
+          else
+          {
+            int boolean=0;
+            for(int i=0;i<WINDOW_LENGTH;i++)
+            {
+              if(buffer[i]!=NULL)
+              {
+                if(pkt_get_seqnum(buffer[i])==pkt_seqnum)
+                {
+                  boolean=1;
+                }
+              }
+            }
+            if(boolean)
+            {
+              pkt_del(pkt);
+              uint8_t seqnumtosend=sseqnum;
+              if(sseqnum==0)
+              seqnumtosend=255;
+              if(send_ack(sfd,seqnumtosend)!=0)
               {
                 fprintf(stderr,"Error : sending ack\n");
 
-                //return -1;
+                return -1;
               }
             }
-          }
-          else                                                                  //Si pas encore dans le buffer
-          {
-            int added=0;
-            int i;
-            for(i=0;i<WINDOW_LENGTH;i++)
+            else
             {
-              if(buffer[i]==NULL)
+              int added=0;
+              for(int i=0;i<WINDOW_LENGTH;i++)
               {
-                buffer[i]=pkt;
-                i=WINDOW_LENGTH;
-                added=1;
-              }
-            }
-            if(!added)                                                          //Si pas ete ajoute
-            {
-              pkt_del(pkt);
-              if(first_received)
-              {
-                if(send_ack(sfd,sseqnum)!=0)
+                if(buffer[i]==NULL)
                 {
-                  fprintf(stderr,"Error : sending ack\n");
-
-                  //return -1;
+                  buffer[i]=pkt;
+                  i=WINDOW_LENGTH;
+                  added=1;
                 }
               }
-              fprintf(stderr,"Error : no space on buffer - pkt discarded\n"); //<<-------------------->>
-            }
-            else                                                                //Si ajoute
-            {
-              if(first_received)
+              if(!added)
               {
-                if(send_ack(sfd,sseqnum)!=0)
+                pkt_del(pkt);
+                fprintf(stderr,"Error : no space on buffer - pkt discarded\n");
+              }
+              else
+              {
+                uint8_t seqnumtosend=sseqnum;
+                if(sseqnum==0)
+                seqnumtosend=255;
+                if(send_ack(sfd,seqnumtosend)!=0)
                 {
                   fprintf(stderr,"Error : sending ack\n");
 
-                  //return -1;
+                  return -1;
                 }
               }
             }
           }
         }
-      }
-      else                                                                      //Si pas dans la fenetre
-      {
-        if(first_received)
+        else //not in window TODO: renvoyer ack? ou pas?
         {
-          if(send_ack(sfd,sseqnum)!=0)
+          uint8_t seqnumtosend=sseqnum;
+          if(sseqnum==0)
+          seqnumtosend=255;
+          if(send_ack(sfd,seqnumtosend)!=0)
           {
             fprintf(stderr,"Error : sending ack\n");
 
-            //return -1;
+            return -1;
           }
+          pkt_del(pkt);
         }
-        pkt_del(pkt);
       }
+      //end of loop
     }
-    //end of loop
-  }
 }
 
 int main(int argc, char* argv[])
@@ -308,30 +271,28 @@ int main(int argc, char* argv[])
   if(err!=NULL)
   {
     fprintf(stderr, "Wrong hostname %s: %s\n", first_address, err);
-    return EXIT_FAILURE;
+		return EXIT_FAILURE;
   }
   //printf("about to create_socket\n");
   int sfd = create_socket(&addr, port, NULL, -1); /* Bound */
   //printf("about to wait_for_client\n");
-  if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */ //Si j'ai un socket mais qu'il y a une erreur dans wait_for_client
-  fprintf(stderr,
-    "Could not connect the socket after the first message.\n");
-    close(sfd);
-    return EXIT_FAILURE;
-  }
-  if (sfd < 0) {
-    fprintf(stderr, "Failed to create the socket!\n");
-    return EXIT_FAILURE;
-  }
+	if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */ //Si j'ai un socket mais qu'il y a une erreur dans wait_for_client
+		fprintf(stderr,
+				"Could not connect the socket after the first message.\n");
+		close(sfd);
+		return EXIT_FAILURE;
+	}
+	if (sfd < 0) {
+		fprintf(stderr, "Failed to create the socket!\n");
+		return EXIT_FAILURE;
+	}
   //printf("about to receive_data\n");
   if(receive_data(sfd, filename, optionf) < 0) {
-    fprintf(stderr, "Reception error\n");
-    close(sfd);
-    return EXIT_FAILURE;
-  }
+		fprintf(stderr, "Reception error\n");
+		return EXIT_FAILURE;
+	}
   printf("=== Data successfully received ===\n");
   printf("Number of NACK : %d\n",countNack);
   printf("Number of ACK : %d\n",countAck);
-  close(sfd);
   return EXIT_SUCCESS;
 }

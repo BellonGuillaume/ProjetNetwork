@@ -26,11 +26,11 @@ void test_prog()
 	if(pid==0)
 	{
 		system("rm out.txt");
-		system("./receiver -f out.txt localhost 6565");
+		system("../receiver -f out.txt localhost 6565");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("../sender -f test.txt localhost 6565");
 	close(pid);
 	close(fd);
 	fd= open("out.txt",O_RDONLY);
