@@ -10,7 +10,7 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-int n=1000;
+int n=100;
 void test_perfect()
 {
 	printf("Test envoi de %d kb sur une ligne parfaite.\n",n/100);
@@ -24,27 +24,7 @@ void test_perfect()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -62,27 +42,7 @@ void test_err()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -100,27 +60,7 @@ void test_loss()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -138,27 +78,7 @@ void test_delay()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -176,27 +96,7 @@ void test_err_1mb()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -214,27 +114,7 @@ void test_loss_1mb()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -252,27 +132,7 @@ void test_tot()
 	sleep(1);
 	system("./sender -f test.txt localhost 6565");
 	close(pid);
-	int fd= open("out.txt",O_RDONLY);
-	int err=0;
-	if(fd<0)
-	{
-		err=1;
-		fprintf(stderr,"No output file created\n");
-		CU_ASSERT(err==0);
-	}
-	for(int j=0;j<n;j++)
-	{
-		for(int i=0;i<10;i++)
-		{
-			char buf[1];
-			read(fd,buf,1);
-			if(buf[0]!=(i+'0'))
-			{
-				err=1;
-			}
-		}
-	}
-	close(fd);
+	int err=system("diff test.txt out.txt");
 	system("rm out.txt");
 	CU_ASSERT(err==0);
 }
@@ -326,7 +186,11 @@ int main (int argc, char* argv[])
 	CU_add_test(suite2, "test2", test_err_1mb);
 	CU_add_test(suite2, "test3", test_loss_1mb);
   CU_basic_set_mode(CU_BRM_VERBOSE);
+
+	//Test 10kb
   CU_basic_run_suite(suite);
+	sleep(5);
+	system("clear");
 
 	n=n*25;
 	system("fuser -k 1341/udp");
@@ -343,18 +207,31 @@ int main (int argc, char* argv[])
 		}
 	}
 	close(fd);
+
+	//Test 0.25mb
 	CU_basic_run_suite(suite2);
+	sleep(5);
+	system("clear");
 
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
 	CU_pSuite suite3 = CU_add_suite("Test avec mauvaise connection du programme", 0, 0);
 	CU_add_test(suite3, "test1", test_tot);
+
+	//Test total
 	CU_basic_run_suite(suite3);
+	sleep(5);
+	system("clear");
 
 	system("rm test.txt");
 
 	CU_pSuite suite_window = CU_add_suite("Tests fonctions de window.c", 0, 0);
 	CU_add_test(suite_window, "test1", test_window);
+
+	//Test window
 	CU_basic_run_suite(suite_window);
+	sleep(5);
+	system("clear");
+
 	CU_cleanup_registry();
 }

@@ -95,13 +95,13 @@ int send_data(int sfd, char* filename, int optionf)
 					{
 						//printf("Ack recu\n");
 						window_length = pkt_get_window(ack);
-						printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
+						//printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 						window_remove(window,pkt_get_seqnum(ack)-1);
 					}
 					else if(typeAck==PTYPE_NACK)																					//Si accuse de reception de type NACK
 					{
 						window_length = pkt_get_window(ack);
-						printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
+						//printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 						pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 						if(pkt!=NULL)
 						{
@@ -202,7 +202,7 @@ int send_data(int sfd, char* filename, int optionf)
 				{
 					//printf("Ack recu\n");
 					window_length = pkt_get_window(ack);
-					printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
+					//printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 					window_remove(window,pkt_get_seqnum(ack)-1);
 					if(eof_reached && window->size_used==0)
 					{
@@ -220,7 +220,7 @@ int send_data(int sfd, char* filename, int optionf)
 				{
 					//printf("Nack recu\n");
 					window_length = pkt_get_window(ack);
-					printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
+					//printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
