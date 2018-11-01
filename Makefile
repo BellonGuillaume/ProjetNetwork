@@ -22,4 +22,4 @@ test_prog.o: test/test_prog.o src/window.c src/commonlib.c
 	gcc -c test/test_prog.c src/window.c src/commonlib.c -lcunit
 
 clean :
-	rm sender receiver packet.o receiver.o sender.o commonlib.o socket_manipulation.o window.o tests test_prog.o
+	rm sender receiver packet.o receiver.o sender.o commonlib.o socket_manipulation.o test/test_prog.o window.o tests test_prog.o
