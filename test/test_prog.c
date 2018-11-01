@@ -9,7 +9,7 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-int n=1;
+int n=1000;
 void test_prog()
 {
 	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
@@ -61,15 +61,19 @@ void test_prog()
 
 int main (int argc, char* argv[])
 {
+	/*
 	if(argc==2)
 	{
 		n=atoi(argv[1]);
 	}
+
 	else
 	{
 		fprintf(stderr,"\nUsage :\n\n	./test1 size\n	- size being the number of times the sequence 0123456789 will be sent\n\n");
 		return -1;
 	}
+	*/
+
 	printf("Test envoi de %d kb.\n",n/100);
 	CU_initialize_registry();
   CU_pSuite suite = CU_add_suite("test_prog", 0, 0);
