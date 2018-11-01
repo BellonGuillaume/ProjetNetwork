@@ -123,7 +123,11 @@ int receive_data(int sfd, char* filename, int optionf)
     pkt_t* pkt=pkt_new();
     int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
     fflush(stdout);
-    if(err==2)                                                                  //  Si le paquet recu est tronque
+    if(err==3)
+    {
+      pkt_del(pkt);
+    }
+    else if(err==2)                                                                  //  Si le paquet recu est tronque
     {
       uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
       if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                    //    Si il est dans la fenetre attendue

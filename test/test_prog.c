@@ -169,7 +169,10 @@ void test_window()
 	node_t* nodetest = node_new(pktest);
 	CU_ASSERT(nodetest!=NULL);
 	if(nodetest==NULL)
-	return;
+	{
+		window_del(test);
+		return;
+	}
 	CU_ASSERT(nodetest->pkt == pktest && nodetest->seqnum == pkt_get_seqnum(pktest));
 	CU_ASSERT(window_add(test, pktest) >= 0);
 	CU_ASSERT(test->length == length && test->size_used == 1 && test->buffer != NULL);

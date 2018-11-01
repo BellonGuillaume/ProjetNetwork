@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <zlib.h>
 
+int i=-1;
 
 
 struct __attribute__((__packed__)) pkt {
@@ -21,8 +22,8 @@ struct __attribute__((__packed__)) pkt {
     uint32_t crc2;
 };
 
-pkt_t* pkt_new(){
-
+pkt_t* pkt_new()
+{
     pkt_t* ret=(pkt_t *)calloc(1,sizeof(pkt_t));
     if(ret==NULL){
         return NULL;
