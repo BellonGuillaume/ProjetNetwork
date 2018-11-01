@@ -12,7 +12,7 @@
 #include <string.h>
 #include "../src/commonlib.c"
 
-int n=100;
+int n=1;
 void test_perfect()
 {
 	printf("Test envoi de %d kb sur une ligne parfaite.\n",n/100);
@@ -178,6 +178,7 @@ void test_window()
 	CU_ASSERT(test->length == length && test->size_used == 1 && test->buffer != NULL);
 	window_remove(test,nodetest->seqnum);
 	CU_ASSERT(test->size_used == 0 && test->buffer != NULL);
+	node_del(nodetest);
 	window_del(test);
 	test=NULL;
 }
