@@ -237,17 +237,6 @@ int receive_data(int sfd, char* filename, int optionf)
           }
         }
       }
-      /*else                                                                      //    Si pas dans la fenetre
-      {
-        if(first_received)
-        {
-          if(send_ack(sfd,sseqnum)!=0)
-          {
-            fprintf(stderr,"Error : sending ack\n");
-          }
-        }
-        pkt_del(pkt);
-      }*/
     }
   }                                                                             //  Fin de la boucle
 }
