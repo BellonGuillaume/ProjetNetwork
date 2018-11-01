@@ -181,12 +181,12 @@ int main (int argc, char* argv[])
 	}
 	close(fd);
 	CU_initialize_registry();
-  CU_pSuite suite = CU_add_suite("Tests du programme avec 10kb", 0, 0);
+  CU_pSuite suite = CU_add_suite("Tests du programme avec 1kb", 0, 0);
   CU_add_test(suite, "test1", test_perfect);
 	CU_add_test(suite, "test2", test_err);
 	CU_add_test(suite, "test3", test_loss);
 	CU_add_test(suite, "test3", test_delay);
-	CU_pSuite suite2 = CU_add_suite("Tests du programme avec 1mb", 0, 0);
+	CU_pSuite suite2 = CU_add_suite("Tests du programme avec 0.1mb", 0, 0);
   CU_add_test(suite2, "test1", test_perfect);
 	CU_add_test(suite2, "test2", test_err_1mb);
 	CU_add_test(suite2, "test3", test_loss_1mb);
@@ -197,7 +197,7 @@ int main (int argc, char* argv[])
 	sleep(5);
 	//system("clear");
 
-	n=n*25;
+	n=n*100;
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
 	system("rm test.txt > /dev/null 2>&1");
@@ -235,7 +235,7 @@ int main (int argc, char* argv[])
 
 	//Test window
 	CU_basic_run_suite(suite_window);
-	sleep(5);
+	//sleep(5);
 	//system("clear");
 
 	CU_cleanup_registry();
