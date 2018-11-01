@@ -289,8 +289,8 @@ int main (int argc, char* argv[])
 	//Test 0.25mb
 	CU_basic_run_suite(suite2);
 
-	system("fuser -k 1341/udp");
-	system("fuser -k 6565/udp");
+	system("fuser -k 1341/udp > /dev/null 2>&1");
+	system("fuser -k 6565/udp > /dev/null 2>&1");
 
 	//Test total
 	CU_basic_run_suite(suite4);
@@ -303,6 +303,9 @@ int main (int argc, char* argv[])
 
 	//Test commonlib
 	CU_basic_run_suite(suite_commonlib);
+
+	system("fuser -k 1341/udp > /dev/null 2>&1");
+	system("fuser -k 6565/udp > /dev/null 2>&1");
 
 	printf("\nToutes les fonctions de packet.c et certaines fonctions de socket_manipulation ont déjà été testées via inginious.\nLes fonctions des fichiers sender.c et receiver.c sont indirectement testées dans les suites 1,2,3 et 4\n");
 	CU_cleanup_registry();
