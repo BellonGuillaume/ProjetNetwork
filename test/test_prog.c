@@ -214,6 +214,11 @@ void test_commonlib()
 	CU_ASSERT(port==6565);
 	CU_ASSERT(ValidateArgs(argc5,argv5,&optionf,filename,first_address,&port)!=0);
 	CU_ASSERT(ValidateArgs(argc6,argv6,&optionf,filename,first_address,&port)!=0);
+	CU_ASSERT(seqnum_in_window(25, 8, 30)==1)
+	CU_ASSERT(seqnum_in_window(25, 8, 33)==0)
+	CU_ASSERT(seqnum_in_window(25, 8, 34)==0)
+	CU_ASSERT(seqnum_in_window(25, 8, 25)==1)
+	CU_ASSERT(seqnum_in_window(25, 8, 24)==0)
   fclose(stderr);
 	stdout=fdopen(oldstdout,"w");
 

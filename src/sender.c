@@ -31,9 +31,12 @@ int send_data(int sfd, char* filename, int optionf)
 	memset(bufsender,0,512);
 	window_t* window = window_new(31);																						//Création de la fenêtre
 	if(window == NULL){
-		if(close(fd)<0){
-			fprintf(stderr, "Error : the file wasn't closed\n");
-			return EXIT_FAILURE;
+		if(fd!=0)
+		{
+			if(close(fd)<0){
+				fprintf(stderr, "Error : the file wasn't closed\n");
+				return EXIT_FAILURE;
+			}
 		}
 		return EXIT_FAILURE;
 	}
@@ -157,9 +160,12 @@ int send_data(int sfd, char* filename, int optionf)
 							fprintf(stderr, "Error : pkt not added on the window\n");
 							window_del(window);
 							pkt_del(pkt);
-							if(close(fd)<0){
-								fprintf(stderr, "Error : the file wasn't closed\n");
-								return EXIT_FAILURE;
+							if(fd!=0)
+							{
+								if(close(fd)<0){
+									fprintf(stderr, "Error : the file wasn't closed\n");
+									return EXIT_FAILURE;
+								}
 							}
 							return EXIT_FAILURE;
 						}

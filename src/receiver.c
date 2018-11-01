@@ -89,25 +89,29 @@ int receive_data(int sfd, char* filename, int optionf)
           {
             fprintf(stderr,"Error : process data\n");
             free(buffer);
-            if(close(fd)<0)
-            {
-              fprintf(stderr,"Error : the file wasn't closed\n");
-              return -1;
+            if(fd!=0){
+              if(close(fd)<0)
+              {
+                fprintf(stderr,"Error : the file wasn't closed\n");
+                return -1;
+              }
             }
-            //return -1;
+            return -1;
           }
           buffer[i]=NULL;
           size_used--;
           if(send_ack(sfd,sseqnum+1)==-1)                                       //      On renvoie le ack correspondant
           {
             fprintf(stderr,"Error : sending ack\n");
-            free(buffer);
-            if(close(fd)<0)
+            /*free(buffer);
+            if(fd!=0)
             {
-              fprintf(stderr,"Error : the file wasn't closed\n");
-              return -1;
-            }
-            //return -1;
+              if(close(fd)<0)
+              {
+                fprintf(stderr,"Error : the file wasn't closed\n");
+                return -1;
+              }
+            }*/
           }
           sseqnum++;                                                            //      On incremente sseqnum
           if(sseqnum>255)
@@ -127,10 +131,9 @@ int receive_data(int sfd, char* filename, int optionf)
         if(send_nack(sfd,pkt_get_seqnum(pkt))==-1)                              //      On envoie un nack
         {
           fprintf(stderr,"Error : sending nack\n");
-          pkt_del(pkt);
         }
-        pkt_del(pkt);
       }
+      pkt_del(pkt);
     }
     else if(err==1)                                                             //  Si le paquet contient le EOF
     {
@@ -162,7 +165,6 @@ int receive_data(int sfd, char* filename, int optionf)
               {
                 pkt_del(buffer[i]);                                             //            On le supprime
                 size_used--;
-                i=WINDOW_LENGTH;
               }
             }
           }
