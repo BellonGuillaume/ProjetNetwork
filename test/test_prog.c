@@ -163,6 +163,7 @@ int main (int argc, char* argv[])
 {
 	system("cd test/linksim > /dev/null 2>&1");
 	system("make > /dev/null 2>&1");
+	system("make rebuild > /dev/null 2>&1");
 	system("cd .. > /dev/null 2>&1");
 	system("cd .. > /dev/null 2>&1");
 	system("fuser -k 1341/udp > /dev/null 2>&1");
