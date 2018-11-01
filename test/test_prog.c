@@ -161,9 +161,14 @@ void test_window()
 
 int main (int argc, char* argv[])
 {
+	system("cd test/linksim");
+	system("make");
+	system("cd ..");
+	system("cd ..");
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
 	system("rm test.txt");
+	system("clear");
 	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
 	for(int j=0;j<n;j++)
 	{
