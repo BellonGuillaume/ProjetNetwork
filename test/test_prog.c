@@ -243,22 +243,22 @@ int main (int argc, char* argv[])
 	close(fd);
 	CU_initialize_registry();
   CU_pSuite suite = CU_add_suite("Tests du programme avec 1kb", 0, 0);
-  CU_add_test(suite, "test1", test_perfect);
-	CU_add_test(suite, "test2", test_err);
-	CU_add_test(suite, "test3", test_loss);
-	CU_add_test(suite, "test3", test_delay);
+  CU_add_test(suite, "test_perfect", test_perfect);
+	CU_add_test(suite, "test_err", test_err);
+	CU_add_test(suite, "test_loss", test_loss);
+	CU_add_test(suite, "test_delay", test_delay);
 	CU_pSuite suite2 = CU_add_suite("Tests du programme avec 0.1mb", 0, 0);
-  CU_add_test(suite2, "test1", test_perfect);
-	CU_add_test(suite2, "test2", test_err_1mb);
-	CU_add_test(suite2, "test3", test_loss_1mb);
+  CU_add_test(suite2, "test_perfect", test_perfect);
+	CU_add_test(suite2, "test_err_1mb", test_err_1mb);
+	CU_add_test(suite2, "test_loss_1mb", test_loss_1mb);
 	CU_pSuite suite3 = CU_add_suite("Test envoi 0.1mb avec mauvaise connection du programme", 0, 0);
-	CU_add_test(suite3, "test1", test_tot);
+	CU_add_test(suite3, "test_tot", test_tot);
 	CU_pSuite suite4 = CU_add_suite("Test envoi 0.1mb avec mauvaise connection du programme", 0, 0);
-	CU_add_test(suite4, "test1", test_tot_1mb);
+	CU_add_test(suite4, "test_tot_1mb", test_tot_1mb);
 	CU_pSuite suite_window = CU_add_suite("Tests fonctions de window.c", 0, 0);
-	CU_add_test(suite_window, "test1", test_window);
+	CU_add_test(suite_window, "test_window", test_window);
 	CU_pSuite suite_commonlib = CU_add_suite("Tests fonctions de commonlib.c", 0, 0);
-	CU_add_test(suite_commonlib, "test1", test_commonlib);
+	CU_add_test(suite_commonlib, "test_commonlib", test_commonlib);
   CU_basic_set_mode(CU_BRM_VERBOSE);
 
 	//Test 10kb
@@ -304,5 +304,6 @@ int main (int argc, char* argv[])
 	//Test commonlib
 	CU_basic_run_suite(suite_commonlib);
 
+	printf("\nToutes les fonctions de packet.c et certaines fonctions de socket_manipulation ont déjà été testées via inginious.\nLes fonctions des fichiers sender.c et receiver.c sont indirectement testées dans les suites 1,2,3 et 4\n");
 	CU_cleanup_registry();
 }
