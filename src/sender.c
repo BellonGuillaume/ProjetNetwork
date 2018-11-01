@@ -351,9 +351,9 @@ int send_data(int sfd, char* filename, int optionf)
 int main (int argc, char* argv[])
 {
 	int optionf = 0;
-	char first_address[16]="";
+	char first_address[256]="";
 	int port=-1;
-	char filename[255]="";
+	char filename[256]="";
 	if(ValidateArgs(argc,argv,&optionf,filename,first_address,&port)!=0)
 	{
 		return EXIT_FAILURE;
