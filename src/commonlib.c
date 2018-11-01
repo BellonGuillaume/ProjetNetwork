@@ -28,6 +28,13 @@
  */
 int ValidateArgs(int argc, char* argv[],int* optionf,char* filename,char* first_address,int* port)
 {
+	int tmpf=-1;
+	/*printf("%d\n",argc);
+	for(int i=0;i<argc;i++)
+	{
+		printf("%s\n",argv[i]);
+	}
+	printf("\n");*/
 	if (argc < 3){
 		fprintf(stderr, "\nUsage:\n\n./sender   [-f filename] hostname port\n./receiver [-f filename] hostname port\n\n");
 		return EXIT_FAILURE;
@@ -35,15 +42,25 @@ int ValidateArgs(int argc, char* argv[],int* optionf,char* filename,char* first_
   int option = getopt(argc,argv,"f:");
   if(option==-1)
   {
-    *optionf==0;
+    tmpf==0;
+		if(argc>3)
+		{
+			fprintf(stderr, "\nUsage:\n\n./sender   [-f filename] hostname port\n./receiver [-f filename] hostname port\n\n");
+			return EXIT_FAILURE;
+		}
   }
   else
   {
+		if(argc < 5)
+		{
+			fprintf(stderr, "\nUsage:\n\n./sender   [-f filename] hostname port\n./receiver [-f filename] hostname port\n\n");
+			return EXIT_FAILURE;
+		}
     switch(option)
     {
       case 'f' :
       {
-        *optionf=1;
+        tmpf=1;
         memcpy(filename,optarg,strlen(optarg));
         break;
       }
@@ -54,6 +71,14 @@ int ValidateArgs(int argc, char* argv[],int* optionf,char* filename,char* first_
       }
     }
   }
+	if(tmpf!=1)
+	{
+		*optionf=0;
+	}
+	else
+	{
+		*optionf=1;
+	}
   memcpy(first_address,argv[argc-2],strlen(argv[argc-2]));
 	*port = atoi(argv[argc-1]);
   return 0;

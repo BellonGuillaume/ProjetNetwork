@@ -9,6 +9,8 @@
 #include "../src/window.c"
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
+#include <string.h>
+#include "../src/commonlib.c"
 
 int n=100;
 void test_perfect()
@@ -159,6 +161,46 @@ void test_window()
 	test=NULL;
 }
 
+void test_commonlib()
+{
+	char* argv1[] = {"./sender", "-f", "file1", "123456789", "6565"};
+	int argc1=5;
+	char* argv2[] = {"./sender", "-f", "123456789", "6565"};
+	int argc2=4;
+	char* argv3[] = {"./sender", "file1", "123456789", "6565"};
+	int argc3=4;
+	char* argv4[] = {"./sender", "123456789", "6565"};
+	int argc4=3;
+	char* argv5[] = {"./sender", "-f", "file1", "6565"};
+	int argc5=4;
+	char* argv6[] = {"./sender", "6565"};
+	int argc6=2;
+	int optionf=-1;
+	char filename[255]="";
+	char first_address[16]="";
+	int port=-1;
+	int err=-1;
+	int oldstdout=dup(1);
+	freopen("/dev/null", "w", stderr);
+	CU_ASSERT(ValidateArgs(argc1,argv1,&optionf,filename,first_address,&port)==0);
+	CU_ASSERT(optionf==1);
+	CU_ASSERT(strcmp(filename,"file1")==0);
+	CU_ASSERT(strcmp(first_address,"123456789")==0);
+	CU_ASSERT(port=6565);
+	ValidateArgs(argc2,argv2,&optionf,filename,first_address,&port);
+	CU_ASSERT(ValidateArgs(argc2,argv2,&optionf,filename,first_address,&port)!=0);
+	CU_ASSERT(ValidateArgs(argc3,argv3,&optionf,filename,first_address,&port)!=0);
+	CU_ASSERT(ValidateArgs(argc4,argv4,&optionf,filename,first_address,&port)==0);
+	CU_ASSERT(optionf==0);
+	CU_ASSERT(strcmp(first_address,"123456789")==0);
+	CU_ASSERT(port==6565);
+	CU_ASSERT(ValidateArgs(argc5,argv5,&optionf,filename,first_address,&port)!=0);
+	CU_ASSERT(ValidateArgs(argc6,argv6,&optionf,filename,first_address,&port)!=0);
+  fclose(stderr);
+	stdout=fdopen(oldstdout,"w");
+
+}
+
 int main (int argc, char* argv[])
 {
 	system("cd test/linksim > /dev/null 2>&1");
@@ -195,7 +237,7 @@ int main (int argc, char* argv[])
 
 	//Test 10kb
   CU_basic_run_suite(suite);
-	sleep(5);
+	//sleep(5);
 	//system("clear");
 
 	n=n*100;
@@ -216,7 +258,7 @@ int main (int argc, char* argv[])
 
 	//Test 0.25mb
 	CU_basic_run_suite(suite2);
-	sleep(5);
+	//sleep(5);
 	//system("clear");
 
 	system("fuser -k 1341/udp");
@@ -226,7 +268,7 @@ int main (int argc, char* argv[])
 
 	//Test total
 	CU_basic_run_suite(suite3);
-	sleep(5);
+	//sleep(5);
 	//system("clear");
 
 	system("rm test.txt > /dev/null 2>&1");
@@ -238,6 +280,12 @@ int main (int argc, char* argv[])
 	CU_basic_run_suite(suite_window);
 	//sleep(5);
 	//system("clear");
+
+	CU_pSuite suite_commonlib = CU_add_suite("Tests fonctions de commonlib.c", 0, 0);
+	CU_add_test(suite_commonlib, "test1", test_commonlib);
+
+	//Test commonlib
+	CU_basic_run_suite(suite_commonlib);
 
 	CU_cleanup_registry();
 }

@@ -18,8 +18,8 @@ receiver.o: src/receiver.c src/receiver.h src/socket_manipulation.c src/commonli
 sender.o: src/sender.c src/sender.h src/socket_manipulation.c src/commonlib.c src/window.c
 	gcc -c src/sender.c src/socket_manipulation.c src/commonlib.c src/window.c
 
-test_prog.o: test/test_prog.o src/window.c
-	gcc -c test/test_prog.c src/window.c -lcunit
+test_prog.o: test/test_prog.o src/window.c src/commonlib.c
+	gcc -c test/test_prog.c src/window.c src/commonlib.c -lcunit
 
 clean :
 	rm sender receiver packet.o receiver.o sender.o commonlib.o socket_manipulation.o window.o tests test_prog.o
