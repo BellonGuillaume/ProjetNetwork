@@ -14,7 +14,7 @@
 #include <getopt.h>
 #include <ctype.h>
 
-#define WINDOW_LENGTH 4
+#define WINDOW_LENGTH 31
 
 /* Read and processes the arguments argv, assigns it to the arguments given in
  * the fuction. They are left untouched if argv doesnt respect the right format.

@@ -127,7 +127,8 @@ int send_buf(int sfd, char* buf, size_t len)
 {
   //printf("sendbuf\n");
   int length;
-  for(int totalLength=0;totalLength<len;totalLength+=length)
+  int totalLength;
+  for(totalLength=0;totalLength<len;totalLength+=length)
   {
     length=write(sfd,buf,len);
     //printf("write\n");
@@ -161,42 +162,34 @@ int receive_buf(int sfd, char* buf, int* len)
   //printf("Waiting for receive\n");
     int ret=-1;
     *len=0;
-    while(1)
-    {
         struct pollfd fds[1];
 
         fds[0].fd=sfd;
         fds[0].events=POLLIN;
         //printf("about to poll\n");
-        ret = poll(fds, 1, -1 );
+        ret = poll(fds, 1, 1 );
 
         if (ret<0)
         {
-            fprintf(stderr,"select error\n");
-            fprintf(stderr,"ERROR: %s\n", strerror(errno));
+            fprintf(stderr,"select error : ");
+            fprintf(stderr,"%s\n", strerror(errno));
             return -1;
         }
 
         if (fds[0].revents & POLLIN)
         {
-          //printf("SOCKET INPUT\n");
             int length=read(sfd, buf, 1024);
-            //printf("length read: %d\n",length);
-            /*if(length<0)//?
+
+            if(length<0)
             {
-                fprintf(stderr,"ERROR: %s\n", strerror(errno));
-                fprintf(stderr,"Erreur read socket\n");
-                return;
-            }*/
-            if(length==0 || length==EOF || strcmp(buf,"EOF")==0)
-            {
-                //fprintf(stderr,"Fin du programme");
-                return 1;
+                fprintf(stderr,"read error : ");
+                fprintf(stderr,"%s\n", strerror(errno));
+                return -1;
             }
             *len+=length;
             return 0;
         }
-    }
+        return 3; //Rien à lire
 }
 
 /*
@@ -215,10 +208,9 @@ int receive_pkt(int sfd, pkt_t* pkt)
     fprintf(stderr,"Error receiving\n");
     return -1;
   }
-  if(signal>0)
+  if(signal==3)
   {
-    //fprintf(stdout,"Finir programme\n");
-    return 1;
+    return 3;
   }
   //printf("about to decode\n");
   pkt_status_code err = pkt_decode(buf,len,pkt);
@@ -231,6 +223,10 @@ int receive_pkt(int sfd, pkt_t* pkt)
     }
     fprintf(stderr,"Error decoding\n");
     return -1;
+  }
+  if((pkt_get_length(pkt)==0) && (pkt_get_type(pkt)==PTYPE_DATA))
+  {
+    return 1;
   }
   //printf("décodé\n");
   return 0;
