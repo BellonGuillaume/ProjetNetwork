@@ -17,15 +17,15 @@ void test_perfect()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
+		system("rm out.txt > /dev/null 2>&1");
 		system("./receiver -f out.txt localhost 6565 >&-");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -35,15 +35,15 @@ void test_err()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -e 25 -p 6565 -P 1341  >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -e 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -53,15 +53,15 @@ void test_loss()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -l 25 -p 6565 -P 1341  >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -l 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -71,15 +71,15 @@ void test_delay()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -d 100 -j 200 -p 6565 -P 1341  >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -89,15 +89,15 @@ void test_err_1mb()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -e 1 -p 6565 -P 1341  >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -e 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -107,15 +107,15 @@ void test_loss_1mb()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -l 1 -p 6565 -P 1341 >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -l 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -125,15 +125,15 @@ void test_tot()
 	pid_t pid=fork();
 	if(pid==0)
 	{
-		system("rm out.txt");
-		system("./test/linksim/link_sim -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341  >&- & ./receiver -f out.txt :: 1341 >&-");
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
-	system("./sender -f test.txt localhost 6565");
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
 	close(pid);
 	int err=system("diff test.txt out.txt");
-	system("rm out.txt");
+	system("rm out.txt > /dev/null 2>&1");
 	CU_ASSERT(err==0);
 }
 
@@ -161,13 +161,13 @@ void test_window()
 
 int main (int argc, char* argv[])
 {
-	system("cd test/linksim");
-	system("make");
-	system("cd ..");
-	system("cd ..");
-	system("fuser -k 1341/udp");
-	system("fuser -k 6565/udp");
-	system("rm test.txt");
+	system("cd test/linksim > /dev/null 2>&1");
+	system("make > /dev/null 2>&1");
+	system("cd .. > /dev/null 2>&1");
+	system("cd .. > /dev/null 2>&1");
+	system("fuser -k 1341/udp > /dev/null 2>&1");
+	system("fuser -k 6565/udp > /dev/null 2>&1");
+	system("rm test.txt > /dev/null 2>&1");
 	system("clear");
 	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
 	for(int j=0;j<n;j++)
@@ -195,12 +195,12 @@ int main (int argc, char* argv[])
 	//Test 10kb
   CU_basic_run_suite(suite);
 	sleep(5);
-	system("clear");
+	//system("clear");
 
 	n=n*25;
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
-	system("rm test.txt");
+	system("rm test.txt > /dev/null 2>&1");
 	fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
 	for(int j=0;j<n;j++)
 	{
@@ -216,7 +216,7 @@ int main (int argc, char* argv[])
 	//Test 0.25mb
 	CU_basic_run_suite(suite2);
 	sleep(5);
-	system("clear");
+	//system("clear");
 
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
@@ -226,9 +226,9 @@ int main (int argc, char* argv[])
 	//Test total
 	CU_basic_run_suite(suite3);
 	sleep(5);
-	system("clear");
+	//system("clear");
 
-	system("rm test.txt");
+	system("rm test.txt > /dev/null 2>&1");
 
 	CU_pSuite suite_window = CU_add_suite("Tests fonctions de window.c", 0, 0);
 	CU_add_test(suite_window, "test1", test_window);
@@ -236,7 +236,7 @@ int main (int argc, char* argv[])
 	//Test window
 	CU_basic_run_suite(suite_window);
 	sleep(5);
-	system("clear");
+	//system("clear");
 
 	CU_cleanup_registry();
 }

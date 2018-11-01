@@ -120,7 +120,7 @@ static void timeval_diff(const struct timeval *a,
 
 /* Log an action on a processed packet */
 #define LOG_PKT_FMT(buf, fmt, ...) \
-	fprintf(stderr,"[SEQ %3u] " fmt, (uint8_t)buf[1], ##__VA_ARGS__)
+	//fprintf(stderr,"[SEQ %3u] " fmt, (uint8_t)buf[1], ##__VA_ARGS__)
 #define LOG_PKT(buf, msg) LOG_PKT_FMT(buf, msg "\n")
 
 /* Send a packet to the host we're proxying */
@@ -265,8 +265,8 @@ static int process_incoming_pkt()
 	 */
 	if (!has_source_addr) {
 		memcpy(&src_addr, &from, sizeof(src_addr));
-		fprintf(stderr, "@@ Remote host is %s [%d]\n",
-				sockaddr6_to_human(&from.sin6_addr), ntohs(from.sin6_port));
+		//fprintf(stderr, "@@ Remote host is %s [%d]\n",
+		//		sockaddr6_to_human(&from.sin6_addr), ntohs(from.sin6_port));
 		has_source_addr = 1; /* We're logically connected to that guy */
 	}
 	int direction = 0;
@@ -574,10 +574,10 @@ int main(int argc, char **argv)
 	/* Setup RNG */
 	if (seed == -1L) {
 		seed = (int)time(NULL);
-		fprintf(stderr, "@@ Using random seed: %d\n", (int)seed);
+		//fprintf(stderr, "@@ Using random seed: %d\n", (int)seed);
 	}
 	srand((int)seed);
-	fprintf(stderr, "@@ Using parameters:\n"
+/*	fprintf(stderr, "@@ Using parameters:\n"
 					".. port: %u\n"
 					".. forward_port: %u\n"
 					".. delay: %u\n"
@@ -588,7 +588,7 @@ int main(int argc, char **argv)
 					".. seed: %d\n"
 					".. link_direction: %s\n",
 					port, forward_port, delay, jitter, err_rate, cut_rate,
-					loss_rate, (int)seed, get_link_direction(link_direction));
+					loss_rate, (int)seed, get_link_direction(link_direction));*/
 	/* Start proxying UDP traffic according to the specified options */
 	return proxy_traffic();
 }
