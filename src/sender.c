@@ -1,6 +1,8 @@
 #include "sender.h"
 
 int countData=0;
+uint8_t end_seqnum = -1;
+struct timeval end_init;
 
 int send_data(int sfd, char* filename, int optionf)
 {
@@ -149,7 +151,7 @@ int send_data(int sfd, char* filename, int optionf)
 						sseqnum=0;
 						pkt_t* pkt;
 						pkt=pkt_initialize(bufsender,length,seqnum,0);
-						printf("1 : window_length = %d\n", window_length);
+						//printf("1 : window_length = %d\n", window_length);
 						if(pkt==NULL)
 						{
 							fprintf(stderr,"Error initialiazing a packet\n");
@@ -258,6 +260,7 @@ int send_data(int sfd, char* filename, int optionf)
 				sseqnum++;
 				if(sseqnum>255)
 				sseqnum=0;
+				end_seqnum = seqnum;
 				pkt_t* end_pkt = pkt_initialize(NULL,0,seqnum,0);
 				if(end_pkt==NULL)
 				{
@@ -276,6 +279,7 @@ int send_data(int sfd, char* filename, int optionf)
 					window_del(window);
 					return -1;
 				}
+				gettimeofday(&end_init,NULL);
 				if(window_add(window,end_pkt)!=0)
 				{
 					fprintf(stderr, "Error : adding disconnecting pkt to the window\n");
@@ -292,17 +296,45 @@ int send_data(int sfd, char* filename, int optionf)
 		}
 		else 																																				//RTT atteint
 		{
-			//printf("Resending pkt\n");
-			if(send_pkt(sfd,n_RTT->pkt)!=0)
+			if(pkt_get_seqnum(n_RTT->pkt) != end_seqnum)
 			{
-				fprintf(stderr,"Error : sending pkt\n");
-				if(fd!=0)
-				close(fd);
-				window_del(window);
-				return -1;
+				//printf("Resending pkt\n");
+				if(send_pkt(sfd,n_RTT->pkt)!=0)
+				{
+					fprintf(stderr,"Error : sending pkt\n");
+					if(fd!=0)
+					close(fd);
+					window_del(window);
+					return -1;
+				}
+				countData++;
+				gettimeofday(&(n_RTT->time_init),NULL);
 			}
-			countData++;
-		  gettimeofday(&(n_RTT->time_init),NULL);
+			else
+			{
+				struct timeval disconnect;
+				gettimeofday(&disconnect,NULL);
+				if(disconnect.tv_sec - end_init.tv_sec > 10)
+				{
+					if(fd!=0)
+					close(fd);
+					window_del(window);
+					return 0;
+				}
+				else
+				{
+					//printf("Resending pkt\n");
+					if(send_pkt(sfd,n_RTT->pkt)!=0)
+					{
+						if(fd!=0)
+						close(fd);
+						window_del(window);
+						return 0;
+					}
+					countData++;
+					gettimeofday(&(n_RTT->time_init),NULL);
+				}
+			}
 		}
 		//printf("futur\n");
 	} //Fin de la boucle while
