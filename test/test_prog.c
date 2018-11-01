@@ -123,12 +123,30 @@ void test_loss_1mb()
 
 void test_tot()
 {
-	printf("Test envoi de %d kb avec 1/100 erreurs de corruption, 1/100 de paquets perdus, 100ms de délai et 200ms de jitter.\n",n/100);
+	printf("Test envoi de %d kb avec 20/100 de troncation, 5/100 erreurs de corruption, 5/100 de paquets perdus, 100ms de délai et 200ms de jitter (aller et retour).\n",n/100);
 	pid_t pid=fork();
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./test/linksim/link_sim -R -c 20 -e 5 -l 5 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		exit(0);
+	}
+	sleep(1);
+	system("./sender -f test.txt localhost 6565 > /dev/null 2>&1");
+	close(pid);
+	int err=system("diff test.txt out.txt");
+	system("rm out.txt > /dev/null 2>&1");
+	CU_ASSERT(err==0);
+}
+
+void test_tot_1mb()
+{
+	printf("Test envoi de %d kb avec 2/100 de troncation, 1/100 erreurs de corruption, 1/100 de paquets perdus, 100ms de délai et 200ms de jitter (aller et retour).\n",n/100);
+	pid_t pid=fork();
+	if(pid==0)
+	{
+		system("rm out.txt > /dev/null 2>&1");
+		system("./test/linksim/link_sim -R -c 2 -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -233,12 +251,24 @@ int main (int argc, char* argv[])
   CU_add_test(suite2, "test1", test_perfect);
 	CU_add_test(suite2, "test2", test_err_1mb);
 	CU_add_test(suite2, "test3", test_loss_1mb);
+	CU_pSuite suite3 = CU_add_suite("Test envoi 0.1mb avec mauvaise connection du programme", 0, 0);
+	CU_add_test(suite3, "test1", test_tot);
+	CU_pSuite suite4 = CU_add_suite("Test envoi 0.1mb avec mauvaise connection du programme", 0, 0);
+	CU_add_test(suite4, "test1", test_tot_1mb);
+	CU_pSuite suite_window = CU_add_suite("Tests fonctions de window.c", 0, 0);
+	CU_add_test(suite_window, "test1", test_window);
+	CU_pSuite suite_commonlib = CU_add_suite("Tests fonctions de commonlib.c", 0, 0);
+	CU_add_test(suite_commonlib, "test1", test_commonlib);
   CU_basic_set_mode(CU_BRM_VERBOSE);
 
 	//Test 10kb
   CU_basic_run_suite(suite);
-	//sleep(5);
-	//system("clear");
+
+	system("fuser -k 1341/udp");
+	system("fuser -k 6565/udp");
+
+	//Test tot 10kb
+	CU_basic_run_suite(suite3);
 
 	n=n*100;
 	system("fuser -k 1341/udp");
@@ -258,31 +288,18 @@ int main (int argc, char* argv[])
 
 	//Test 0.25mb
 	CU_basic_run_suite(suite2);
-	//sleep(5);
-	//system("clear");
 
 	system("fuser -k 1341/udp");
 	system("fuser -k 6565/udp");
-	CU_pSuite suite3 = CU_add_suite("Test avec mauvaise connection du programme", 0, 0);
-	CU_add_test(suite3, "test1", test_tot);
 
 	//Test total
-	CU_basic_run_suite(suite3);
-	//sleep(5);
-	//system("clear");
+	CU_basic_run_suite(suite4);
 
 	system("rm test.txt > /dev/null 2>&1");
 
-	CU_pSuite suite_window = CU_add_suite("Tests fonctions de window.c", 0, 0);
-	CU_add_test(suite_window, "test1", test_window);
 
 	//Test window
 	CU_basic_run_suite(suite_window);
-	//sleep(5);
-	//system("clear");
-
-	CU_pSuite suite_commonlib = CU_add_suite("Tests fonctions de commonlib.c", 0, 0);
-	CU_add_test(suite_commonlib, "test1", test_commonlib);
 
 	//Test commonlib
 	CU_basic_run_suite(suite_commonlib);
