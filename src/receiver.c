@@ -5,15 +5,17 @@
 
 int countNack=0;
 int countAck=0;
+uint8_t size_used = 0;
 
 int send_ack(int sfd, int seqnum)
 {
   ptypes_t type=PTYPE_ACK;
-  pkt_t* ack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH); //TODO :mettre le tr à 1?
+  pkt_t* ack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH-size_used); //TODO :mettre le tr à 1?
   if(ack==NULL)
   return -1;
   int err;
   err=pkt_set_type(ack,type);
+  printf("1 : window_length = %d\n", WINDOW_LENGTH-size_used);
   int err2 = send_pkt(sfd,ack);
   err=err || err2;
   //printf("ack\n");
@@ -26,11 +28,12 @@ int send_nack(int sfd, int seqnum)
 {
   countNack++;
   ptypes_t type=PTYPE_NACK;
-  pkt_t* nack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH); //TODO :mettre le tr à 1?
+  pkt_t* nack = pkt_initialize(NULL,0,seqnum,WINDOW_LENGTH-size_used); //TODO :mettre le tr à 1?
   if(nack==NULL)
   return -1;
   int err;
   err=pkt_set_type(nack,type);
+  printf("2 : window_length = %d\n", WINDOW_LENGTH-size_used);
   if(send_pkt(sfd,nack)!=0)
   {
     pkt_del(nack);
@@ -105,6 +108,8 @@ int receive_data(int sfd, char* filename, int optionf)
             //return -1;
           }
           buffer[i]=NULL;
+          size_used--;
+          printf("3 : window_length = %d\n", WINDOW_LENGTH-size_used);
           if(send_ack(sfd,sseqnum+1)==-1)
           {
             fprintf(stderr,"Error : sending ack\n");
@@ -182,9 +187,12 @@ int receive_data(int sfd, char* filename, int optionf)
               if(pkt_get_seqnum(buffer[i])==sseqnum)
               {
                 pkt_del(buffer[i]);
+                size_used--;
+                i=WINDOW_LENGTH;
               }
             }
           }
+          printf("4 :window_length = %d\n", WINDOW_LENGTH-size_used);
           if(send_ack(sfd,sseqnum+1)!=0)
           {
             fprintf(stderr,"Error : sending ack\n");
@@ -240,6 +248,7 @@ int receive_data(int sfd, char* filename, int optionf)
                 buffer[i]=pkt;
                 i=WINDOW_LENGTH;
                 added=1;
+                size_used++;
               }
             }
             if(!added)                                                          //Si pas ete ajoute
@@ -247,6 +256,7 @@ int receive_data(int sfd, char* filename, int optionf)
               pkt_del(pkt);
               if(first_received)
               {
+                printf("5 : window_length = %d\n", WINDOW_LENGTH-size_used);
                 if(send_ack(sfd,sseqnum)!=0)
                 {
                   fprintf(stderr,"Error : sending ack\n");
@@ -260,6 +270,7 @@ int receive_data(int sfd, char* filename, int optionf)
             {
               if(first_received)
               {
+                printf("6 : window_length = %d\n", WINDOW_LENGTH-size_used);
                 if(send_ack(sfd,sseqnum)!=0)
                 {
                   fprintf(stderr,"Error : sending ack\n");

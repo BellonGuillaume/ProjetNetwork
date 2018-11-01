@@ -4,7 +4,7 @@ int countData=0;
 
 int send_data(int sfd, char* filename, int optionf)
 {
-	uint8_t window_length=31;
+	uint8_t window_length=1;
 	int ret=-1;
 	int fd;
 	int eof_reached=0;
@@ -27,7 +27,7 @@ int send_data(int sfd, char* filename, int optionf)
 	uint8_t sseqnum=0;
 	char bufsender[512];
 	memset(bufsender,0,512);
-	window_t* window = window_new(window_length);
+	window_t* window = window_new(31);
 	if(window == NULL){
 		if(close(fd)<0){
 			fprintf(stderr, "Error : the file wasn't closed\n");
@@ -66,18 +66,18 @@ int send_data(int sfd, char* filename, int optionf)
 				window_del(window);
 				return -1;
 			}																																					//Pas d'erreur de Select
-			int i;
+			/*int i;
 			for(i=0;i<window->length;i++)
 			{
 				if(window->buffer[i]!=NULL)
 				{
 					//printf("WINDOW %d : SEQ %d\n", i, window->buffer[i]->seqnum);
 				}
-			}
+			}*/
 			if (fds[0].revents & POLLIN)																							//Chose a lire dans le fichier
 			{
 				//printf("STDIN INPUT\n");
-				if(window_is_full(window))																							//Si la fenetre est pleine
+				if(window_is_full(window, window_length))																							//Si la fenetre est pleine
 				{
 					pkt_t* ack = pkt_new();
 					if(receive_pkt(sfd,ack)!=PKT_OK)																			//Si accuse de reception recu
@@ -94,10 +94,14 @@ int send_data(int sfd, char* filename, int optionf)
 					else if(typeAck==PTYPE_ACK)																						//Si accuse de reception de type ACK
 					{
 						//printf("Ack recu\n");
+						window_length = pkt_get_window(ack);
+						printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 						window_remove(window,pkt_get_seqnum(ack)-1);
 					}
 					else if(typeAck==PTYPE_NACK)																					//Si accuse de reception de type NACK
 					{
+						window_length = pkt_get_window(ack);
+						printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 						pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 						if(pkt!=NULL)
 						{
@@ -144,7 +148,8 @@ int send_data(int sfd, char* filename, int optionf)
 						if(sseqnum>255)
 						sseqnum=0;
 						pkt_t* pkt;
-						pkt=pkt_initialize(bufsender,length,seqnum,window_length);
+						pkt=pkt_initialize(bufsender,length,seqnum,0);
+						printf("1 : window_length = %d\n", window_length);
 						if(pkt==NULL)
 						{
 							fprintf(stderr,"Error initialiazing a packet\n");
@@ -196,6 +201,8 @@ int send_data(int sfd, char* filename, int optionf)
 				else if(typeAck==PTYPE_ACK)
 				{
 					//printf("Ack recu\n");
+					window_length = pkt_get_window(ack);
+					printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 					window_remove(window,pkt_get_seqnum(ack)-1);
 					if(eof_reached && window->size_used==0)
 					{
@@ -206,13 +213,14 @@ int send_data(int sfd, char* filename, int optionf)
 					if(eof_reached && flag_last_ackw)
 					{
 						done=1;
-						printf("done\n");
 					}
 					//printf("check\n");
 				}
 				else if(typeAck==PTYPE_NACK)
 				{
 					//printf("Nack recu\n");
+					window_length = pkt_get_window(ack);
+					printf("new window_length = %d and size used = %d\n", window_length, window->size_used);
 					pkt_t* pkt=window_find(window,pkt_get_seqnum(ack));
 					if(pkt!=NULL)
 					{
@@ -250,7 +258,7 @@ int send_data(int sfd, char* filename, int optionf)
 				sseqnum++;
 				if(sseqnum>255)
 				sseqnum=0;
-				pkt_t* end_pkt = pkt_initialize(NULL,0,seqnum,window_length);
+				pkt_t* end_pkt = pkt_initialize(NULL,0,seqnum,0);
 				if(end_pkt==NULL)
 				{
 					fprintf(stderr, "Error : creating ending flag\n");
@@ -279,7 +287,7 @@ int send_data(int sfd, char* filename, int optionf)
 				}
 				flag_last_ackw=1;
 				countData++;
-				/*A enlever pour un disconnect pas abrupt*/done=1;											//<--------------------------
+				/*A enlever pour un disconnect pas abrupt*///done=1;											//<--------------------------
 			}
 		}
 		else 																																				//RTT atteint

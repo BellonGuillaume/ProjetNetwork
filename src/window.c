@@ -194,9 +194,9 @@ void window_remove(window_t* window, int seqnum)
   window_remove_until(window,i);
 }
 
-int window_is_full(window_t* window)
+int window_is_full(window_t* window, uint8_t window_length)
 {
-  if(window->length==window->size_used)
+  if(window_length<=window->size_used)
   {
     return 1;
   }
