@@ -1,8 +1,33 @@
 #include "receiver.h"
+//#define DEBUG
 
 int countNack=0;
 int countAck=0;
 uint8_t size_used = 0;
+#ifdef DEBUG
+int buf[20]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+#endif
+void clean_buffer(pkt_t** buffer)
+{
+  if(buffer!=NULL)
+  {
+    int i;
+    for(i=0;i<WINDOW_LENGTH;i++)
+    {
+      if(buffer[i]!=NULL)
+      {
+        #ifdef DEBUG
+        printf("delete buf : [%d]\n",pkt_get_seqnum(buffer[i]));
+        printf("del : [%d]\n",pkt_get_seqnum(buffer[i]));
+        buf[pkt_get_seqnum(buffer[i])]--;
+        #endif
+        pkt_del(buffer[i]);
+        buffer[i]=NULL;
+      }
+    }
+    free(buffer);
+  }
+}
 
 int send_ack(int sfd, int seqnum)
 {
@@ -40,6 +65,10 @@ int send_nack(int sfd, int seqnum)
 int process_data(int fd, pkt_t* pkt)
 {
   int length=write(fd,pkt_get_payload(pkt),pkt_get_length(pkt));
+  #ifdef DEBUG
+  printf("del : [%d]\n",pkt_get_seqnum(pkt));
+  buf[pkt_get_seqnum(pkt)]--;
+  #endif
   pkt_del(pkt);
   return 0;
 }
@@ -48,11 +77,16 @@ int receive_data(int sfd, char* filename, int optionf)
 {
   int first_received=0;
   int sseqnum=0;                                                                //Plus petit seqnum qu'on peut recevoir
-  pkt_t** buffer = calloc(WINDOW_LENGTH,sizeof(pkt_t*));                        //Creation de la fenetre de reception
+  pkt_t** buffer = malloc(WINDOW_LENGTH*sizeof(pkt_t*));                        //Creation de la fenetre de reception
   if(buffer==NULL)
   {
     fprintf(stderr, "Error : calloc fail\n");
     return -1;
+  }
+  int i;
+  for(i=0;i<WINDOW_LENGTH;i++)
+  {
+    buffer[i]=NULL;
   }
   int fd;
   if(!optionf)                                                                  //Si pas option f
@@ -61,11 +95,10 @@ int receive_data(int sfd, char* filename, int optionf)
   }
   else                                                                          //Si option f
   {
-    //TODO: ENLEVER O_TRUNC
     fd=open(filename,O_WRONLY|O_CREAT|O_TRUNC,S_IRWXU|S_IRWXO);                 //  FileDirector = Fichier donne en argument
     if(fd<0)
     {
-      free(buffer);
+      clean_buffer(buffer);
       fprintf(stderr,"Error: file might not exist\n");
       return -1;
     }
@@ -73,16 +106,21 @@ int receive_data(int sfd, char* filename, int optionf)
   while(1)                                                                      //Debut de la boucle d'execution
   {
     int i;
+    int bool=0;
     for(i=0;i<WINDOW_LENGTH;i++)                                                //  Regarde si un ack peut etre envoye
     {
       if(buffer[i]!=NULL)
       {
         if(pkt_get_seqnum(buffer[i])==sseqnum)                                  //    Si le seqnum du pkt dans le buffer = sseqnum
         {
+          #ifdef DEBUG
+          printf("delete buf : [%d]\n",pkt_get_seqnum(buffer[i]));
+          #endif
+          bool=1;
           if(process_data(fd,buffer[i])!=0)                                     //      On extrait le contenu du payload du pkt
           {
             fprintf(stderr,"Error : process data\n");
-            free(buffer);
+            clean_buffer(buffer);
             if(fd!=0){
               if(close(fd)<0)
               {
@@ -94,31 +132,28 @@ int receive_data(int sfd, char* filename, int optionf)
           }
           buffer[i]=NULL;
           size_used--;
-          if(send_ack(sfd,sseqnum+1)==-1)                                       //      On renvoie le ack correspondant
-          {
-            fprintf(stderr,"Error : sending ack\n");
-            /*free(buffer);
-            if(fd!=0)
-            {
-              if(close(fd)<0)
-              {
-                fprintf(stderr,"Error : the file wasn't closed\n");
-                return -1;
-              }
-            }*/
-          }
           sseqnum++;                                                            //      On incremente sseqnum
           if(sseqnum>255)
           sseqnum=0;
         }
       }
     }
-                                                                                //  Plus de ack a envoyer
+    if(bool)
+    {
+      if(send_ack(sfd,sseqnum)==-1)                                             //      On renvoie le ack correspondant
+      {
+        fprintf(stderr,"Error : sending ack\n");
+      }
+    }                                                                            //  Plus de ack a envoyer
     pkt_t* pkt=pkt_new();
     int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
     fflush(stdout);
     if(err==2)                                                                  //  Si le paquet recu est tronque
     {
+      #ifdef DEBUG
+      printf("tr : new : [%d]\n",pkt_get_seqnum(pkt));
+      buf[pkt_get_seqnum(pkt)]++;
+      #endif
       uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
       if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                    //    Si il est dans la fenetre attendue
       {
@@ -127,24 +162,44 @@ int receive_data(int sfd, char* filename, int optionf)
           fprintf(stderr,"Error : sending nack\n");
         }
       }
+      #ifdef DEBUG
+      printf("del : [%d]\n",pkt_get_seqnum(pkt));
+      buf[pkt_get_seqnum(pkt)]--;
+      #endif
       pkt_del(pkt);
     }
     else if(err==1)                                                             //  Si le paquet contient le EOF
     {
+      #ifdef DEBUG
+      printf("new : [%d]\n",pkt_get_seqnum(pkt));
+      buf[pkt_get_seqnum(pkt)]++;
+      #endif
       if(send_ack(sfd,pkt_get_seqnum(pkt)+1)<0)                                 //    On envoie le dernier ack
       {
         fprintf(stderr,"Error sending final ACK\n");
+        #ifdef DEBUG
+        printf("del : [%d]\n",pkt_get_seqnum(pkt));
+        buf[pkt_get_seqnum(pkt)]--;
+        #endif
         pkt_del(pkt);
-        free(buffer);
+        clean_buffer(buffer);
         buffer = NULL;
         return -1;
       }
+      #ifdef DEBUG
+      printf("del : [%d]\n",pkt_get_seqnum(pkt));
+      buf[pkt_get_seqnum(pkt)]--;
+      #endif
       pkt_del(pkt);
-      free(buffer);
+      clean_buffer(buffer);
       return 0;                                                                 //    On termine l'execution
     }
     else if(err==0)                                                             //  Si le paquet n'est pas modifie
     {
+      #ifdef DEBUG
+      printf("new : [%d]\n",pkt_get_seqnum(pkt));
+      buf[pkt_get_seqnum(pkt)]++;
+      #endif
       uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
       if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                    //    Si il est dans la fenetre attendue
       {
@@ -157,7 +212,13 @@ int receive_data(int sfd, char* filename, int optionf)
             {
               if(pkt_get_seqnum(buffer[i])==sseqnum)                            //          S'il l'est
               {
-                pkt_del(buffer[i]);                                             //            On le supprime
+                #ifdef DEBUG
+                printf("delete buf : [%d]\n",pkt_get_seqnum(buffer[i]));
+                printf("del : [%d]\n",pkt_get_seqnum(buffer[i]));
+                buf[pkt_get_seqnum(buffer[i])]--;
+                #endif
+                pkt_del(buffer[i]);
+                buffer[i]=NULL;                                                 //            On le supprime
                 size_used--;
               }
             }
@@ -193,6 +254,10 @@ int receive_data(int sfd, char* filename, int optionf)
           }
           if(boolean)                                                           //        Si deja dans le buffer
           {
+            #ifdef DEBUG
+            printf("del : [%d]\n",pkt_get_seqnum(pkt));
+            buf[pkt_get_seqnum(pkt)]--;
+            #endif
             pkt_del(pkt);
             if(first_received)                                                  //          Si pas le premier pkt
             {
@@ -210,7 +275,10 @@ int receive_data(int sfd, char* filename, int optionf)
             {
               if(buffer[i]==NULL)                                               //            Si on a trouve une place vide
               {
-                buffer[i]=pkt;                                                  //              On l'y ajoute
+                buffer[i]=pkt;
+                #ifdef DEBUG
+                printf("add buf : [%d]\n",pkt_get_seqnum(buffer[i]));           //              On l'y ajoute
+                #endif
                 i=WINDOW_LENGTH;
                 added=1;
                 size_used++;
@@ -218,6 +286,10 @@ int receive_data(int sfd, char* filename, int optionf)
             }
             if(!added)                                                          //          Si pas ete ajoute
             {
+              #ifdef DEBUG
+              printf("del : [%d]\n",pkt_get_seqnum(pkt));
+              buf[pkt_get_seqnum(pkt)]--;
+              #endif
               pkt_del(pkt);
               fprintf(stderr,"Error : no space on buffer - pkt discarded\n");   //            On supprime le pkt
             }
@@ -230,6 +302,10 @@ int receive_data(int sfd, char* filename, int optionf)
             }
           }
         }
+      }
+      else
+      {
+        pkt_del(pkt);
       }
     }
     else
@@ -281,5 +357,13 @@ int main(int argc, char* argv[])
   printf("Number of NACK : %d\n",countNack);
   printf("Number of ACK : %d\n",countAck);
   close(sfd);
+
+  #ifdef DEBUG
+  int i;
+  for(i=0;i<20;i++)
+  {
+    printf("[%d] : %d\n",i,buf[i]);
+  }
+  #endif
   return EXIT_SUCCESS;                                                          //Fin du programme de reception
 }
