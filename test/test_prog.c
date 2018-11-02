@@ -166,10 +166,16 @@ void test_window()
 	return;
 	CU_ASSERT(test->length == length && test->size_used == 0 && test->buffer != NULL);
 	pkt_t* pktest = pkt_new();
+	if(pktest==NULL)
+	{
+		window_del(test);
+		return;
+	}
 	node_t* nodetest = node_new(pktest);
 	CU_ASSERT(nodetest!=NULL);
 	if(nodetest==NULL)
 	{
+		pkt_del(pktest);
 		window_del(test);
 		return;
 	}
@@ -178,7 +184,7 @@ void test_window()
 	CU_ASSERT(test->length == length && test->size_used == 1 && test->buffer != NULL);
 	window_remove(test,nodetest->seqnum);
 	CU_ASSERT(test->size_used == 0 && test->buffer != NULL);
-	node_del(nodetest);
+	free(nodetest);
 	window_del(test);
 	test=NULL;
 }
@@ -240,9 +246,11 @@ int main (int argc, char* argv[])
 	system("rm test.txt > /dev/null 2>&1");
 	system("clear");
 	int fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
-	for(int j=0;j<n;j++)
+	int j;
+	for(j=0;j<n;j++)
 	{
-		for(int i=0;i<10;i++)
+		int i;
+		for(i=0;i<10;i++)
 		{
 			char buf[1];
 			buf[0]=i+'0';
@@ -284,9 +292,10 @@ int main (int argc, char* argv[])
 	system("fuser -k 6565/udp");
 	system("rm test.txt > /dev/null 2>&1");
 	fd=open("test.txt",O_CREAT|O_TRUNC|O_WRONLY,S_IRWXU|S_IRWXO);
-	for(int j=0;j<n;j++)
+	for(j=0;j<n;j++)
 	{
-		for(int i=0;i<10;i++)
+		int i;
+		for(i=0;i<10;i++)
 		{
 			char buf[1];
 			buf[0]=i+'0';
