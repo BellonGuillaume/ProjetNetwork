@@ -103,6 +103,7 @@ int receive_data(int sfd, char* filename, int optionf)
       return -1;
     }
   }
+  int ack_to_send = 0;
   while(1)                                                                      //Debut de la boucle d'execution
   {
     int i;
@@ -144,7 +145,15 @@ int receive_data(int sfd, char* filename, int optionf)
       {
         fprintf(stderr,"Error : sending ack\n");
       }
-    }                                                                            //  Plus de ack a envoyer
+    }
+    else if (ack_to_send)
+    {
+      if(send_ack(sfd,sseqnum)!=0)                                              //        On envoie un ack
+      {
+        fprintf(stderr,"Error : sending ack\n");
+      }
+      ack_to_send=0;
+    }                                                                          //  Plus de ack a envoyer
     pkt_t* pkt=pkt_new();
     int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
     fflush(stdout);
@@ -223,10 +232,7 @@ int receive_data(int sfd, char* filename, int optionf)
               }
             }
           }
-          if(send_ack(sfd,sseqnum+1)!=0)                                        //        On envoie un ack
-          {
-            fprintf(stderr,"Error : sending ack\n");
-          }
+          ack_to_send=1;
           first_received=1;
           sseqnum++;
           if(sseqnum>255)
