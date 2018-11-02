@@ -52,7 +52,7 @@ int send_data(int sfd, char* filename, int optionf)
 			fds[0].events=POLLIN;
 			fds[1].fd = sfd;
 			fds[1].events = POLLIN;
-			ret = poll(fds, 2, 1000);
+			ret = poll(fds, 2, 10);
 			if (ret<0) {																																//Si erreur de Select
 				fprintf(stderr,"select error\n");
 				fprintf(stderr,"ERROR: %s\n", strerror(errno));
