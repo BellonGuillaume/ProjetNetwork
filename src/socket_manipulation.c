@@ -212,7 +212,6 @@ int receive_pkt(int sfd, pkt_t* pkt)
   {
     return 3;
   }
-  //printf("about to decode\n");
   pkt_status_code err = pkt_decode(buf,len,pkt);
   if(err!=PKT_OK)
   {

@@ -41,12 +41,6 @@ int process_data(int fd, pkt_t* pkt)
 {
   int length=write(fd,pkt_get_payload(pkt),pkt_get_length(pkt));
   pkt_del(pkt);
-  if(length==0)                                                                 //Fin du programme
-  {
-    if(fd!=1)
-    close(fd);
-    return 0;
-  }
   return 0;
 }
 
@@ -123,11 +117,7 @@ int receive_data(int sfd, char* filename, int optionf)
     pkt_t* pkt=pkt_new();
     int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
     fflush(stdout);
-    if(err==3)
-    {
-      pkt_del(pkt);
-    }
-    else if(err==2)                                                                  //  Si le paquet recu est tronque
+    if(err==2)                                                                  //  Si le paquet recu est tronque
     {
       uint8_t pkt_seqnum=pkt_get_seqnum(pkt);
       if(seqnum_in_window(sseqnum,WINDOW_LENGTH,pkt_seqnum))                    //    Si il est dans la fenetre attendue
@@ -241,6 +231,10 @@ int receive_data(int sfd, char* filename, int optionf)
           }
         }
       }
+    }
+    else
+    {
+      pkt_del(pkt);
     }
   }                                                                             //  Fin de la boucle
 }
