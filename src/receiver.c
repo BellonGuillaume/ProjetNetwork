@@ -153,7 +153,7 @@ int receive_data(int sfd, char* filename, int optionf)
         fprintf(stderr,"Error : sending ack\n");
       }
       ack_to_send=0;
-    }                                                                          //  Plus de ack a envoyer
+    }                                                                           //  Plus de ack a envoyer
     pkt_t* pkt=pkt_new();
     int err = receive_pkt(sfd,pkt); //TODO : check crc ou tr
     fflush(stdout);
