@@ -38,7 +38,7 @@ void test_err()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -e 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -e 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -56,7 +56,7 @@ void test_loss()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -l 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -l 25 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -74,7 +74,7 @@ void test_delay()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -92,7 +92,7 @@ void test_err_1mb()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -e 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -e 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -110,7 +110,7 @@ void test_loss_1mb()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -l 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -l 1 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -128,7 +128,7 @@ void test_tot()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -R -c 20 -e 5 -l 5 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -R -c 20 -e 5 -l 5 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -146,7 +146,7 @@ void test_tot_1mb()
 	if(pid==0)
 	{
 		system("rm out.txt > /dev/null 2>&1");
-		system("./test/linksim/link_sim -R -c 2 -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
+		system("./tests/linksim/link_sim -R -c 2 -e 1 -l 1 -d 100 -j 200 -p 6565 -P 1341 & ./receiver -f out.txt :: 1341 > /dev/null 2>&1");
 		exit(0);
 	}
 	sleep(1);
@@ -237,7 +237,7 @@ void test_commonlib()
 
 int main (int argc, char* argv[])
 {
-	system("cd test/linksim > /dev/null 2>&1");
+	system("cd tests/linksim > /dev/null 2>&1");
 	system("make > /dev/null 2>&1");
 	system("make rebuild > /dev/null 2>&1");
 	system("cd .. > /dev/null 2>&1");
