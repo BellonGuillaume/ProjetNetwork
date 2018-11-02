@@ -1,7 +1,7 @@
 #include "sender.h"
 
 int countData=0;
-uint8_t end_seqnum = -1;
+int end_seqnum = -1;
 struct timeval end_init;
 
 int send_data(int sfd, char* filename, int optionf)
@@ -274,7 +274,6 @@ int send_data(int sfd, char* filename, int optionf)
 		{
 			if(pkt_get_seqnum(n_RTT->pkt) != end_seqnum)																//Si ce pkt n'est pas la demande de déconnection
 			{
-				//printf("Resending pkt\n");
 				if(send_pkt(sfd,n_RTT->pkt)!=0)																							//On le renvoie
 				{
 					fprintf(stderr,"Error : sending pkt\n");
@@ -292,6 +291,7 @@ int send_data(int sfd, char* filename, int optionf)
 				gettimeofday(&disconnect,NULL);
 				if(disconnect.tv_sec - end_init.tv_sec > 10)																//Si le timer d'attente max à timeout
 				{
+					fprintf(stderr,"Error : timeout --- Abrupt disconnection\n");
 					if(fd!=0)
 					close(fd);
 					window_del(window);
@@ -301,6 +301,7 @@ int send_data(int sfd, char* filename, int optionf)
 				{
 					if(send_pkt(sfd,n_RTT->pkt)!=0)																							//On renvoie la demande de déconnection
 					{
+						fprintf(stderr,"Error : sending disconnecting pkt --- Abrupt disconnection\n");
 						if(fd!=0)
 						close(fd);
 						window_del(window);

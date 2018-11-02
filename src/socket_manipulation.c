@@ -221,7 +221,7 @@ int receive_pkt(int sfd, pkt_t* pkt)
       fprintf(stderr,"Packet truncated\n");
       return 2;
     }
-    fprintf(stderr,"Error decoding\n");
+    //fprintf(stderr,"Error decoding\n");
     return -1;
   }
   if((pkt_get_length(pkt)==0) && (pkt_get_type(pkt)==PTYPE_DATA))
